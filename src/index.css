@@ -4,8 +4,25 @@
 
 body {
   margin: 0;
+  -webkit-tap-highlight-color: transparent;
 }
 
 #root {
   min-height: 100svh;
+}
+
+/* Global focus-visible styles for keyboard navigation */
+:focus-visible {
+  outline: 2px solid #6366f1;
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+:where(.dark, .dark *) :focus-visible {
+  outline-color: #818cf8;
+}
+
+/* Remove default focus outline to rely on focus-visible */
+:focus:not(:focus-visible) {
+  outline: none;
 }
