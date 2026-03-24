@@ -42,3 +42,23 @@
 - **`useSupabaseQuery`** and **`useSupabaseQuerySingle`** in `src/hooks/useSupabaseQuery.ts` — generic wrappers around `useQuery` that accept a Supabase query builder and handle error/null unwrapping.
 - **`useSupabaseMutation`** in `src/hooks/useSupabaseMutation.ts` — wraps `useMutation` with automatic cache invalidation via `invalidateKeys`.
 - Schema note: `workouts.started_at` is nullable in the DB (no `NOT NULL` constraint), so the TS type is `string | null`.
+
+### 2026-03-24 — Authentication UI & Flow (#10)
+- **AuthContext** in `src/lib/AuthContext.tsx` — separated context from component (same pattern as ThemeContext) to satisfy `react-refresh/only-export-components`.
+- **AuthProvider** in `src/components/AuthProvider.tsx` — manages Supabase session via `getSession()` + `onAuthStateChange`, exposes `signIn`, `signUp`, `signOut`.
+- **useAuth** hook in `src/hooks/useAuth.ts` — consumes AuthContext with provider guard.
+- **LoginPage** (`src/pages/LoginPage.tsx`) and **SignUpPage** (`src/pages/SignUpPage.tsx`) — email/password forms with error display, loading states, and cross-links.
+- **ProtectedLayout** in `src/App.tsx` — uses `<Outlet>` for nested routes; redirects to `/login` when unauthenticated; shows spinner during auth check.
+- **PublicRoute** wrapper redirects authenticated users away from login/signup to `/workout`.
+- **ProfilePage** updated with sign-out button (red, with `LogOut` icon) and displays user email.
+- **PR:** #42
+
+### 2026-03-24 — Exercise Search & Picker Component (#11)
+- **ExercisePicker** in `src/components/ExercisePicker.tsx` — modal/overlay with real-time search, exercise list, and inline custom exercise creation form.
+- Uses wrapper + inner component pattern: outer component conditionally renders inner, so local state resets on unmount/remount (avoids `setState`-in-effect lint violation).
+- Library exercises shown with `Dumbbell` icon; custom exercises with `User` icon + indigo "Custom" badge.
+- Touch targets ≥ 44px on all interactive elements. Body scroll locked while modal is open.
+- **useExercises** hook (`src/hooks/useExercises.ts`) — fetches global (`user_id IS NULL`) + user's custom exercises via `.or()` filter, sorted by name.
+- **useCreateExercise** hook (`src/hooks/useCreateExercise.ts`) — mutation with `queryKeys.exercises.all` invalidation.
+- Both hooks follow existing `useSupabaseQuery` / `useSupabaseMutation` patterns from #8.
+- **PR:** #43
