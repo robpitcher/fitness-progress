@@ -2,7 +2,7 @@ import { supabase } from "../lib/supabase";
 import { useSupabaseQuery } from "./useSupabaseQuery";
 import { useSupabaseMutation } from "./useSupabaseMutation";
 import { queryKeys } from "./queryKeys";
-import type { BodyWeight } from "../types";
+import type { BodyWeight, BodyWeightUpdate } from "../types";
 
 export function useBodyWeights(userId: string | undefined) {
   return useSupabaseQuery<BodyWeight>(
@@ -33,6 +33,37 @@ export function useUpsertBodyWeight() {
         .single();
       if (error) throw error;
       return data as BodyWeight;
+    },
+    invalidateKeys: [queryKeys.bodyWeights.all],
+  });
+}
+
+/** Update an existing body weight entry. */
+export function useUpdateBodyWeight() {
+  return useSupabaseMutation<BodyWeight, BodyWeightUpdate>({
+    mutationFn: async ({ id, ...fields }) => {
+      const { data, error } = await supabase
+        .from("body_weights")
+        .update(fields)
+        .eq("id", id)
+        .select()
+        .single();
+      if (error) throw error;
+      return data as BodyWeight;
+    },
+    invalidateKeys: [queryKeys.bodyWeights.all],
+  });
+}
+
+/** Delete a body weight entry by id. */
+export function useDeleteBodyWeight() {
+  return useSupabaseMutation<void, string>({
+    mutationFn: async (id) => {
+      const { error } = await supabase
+        .from("body_weights")
+        .delete()
+        .eq("id", id);
+      if (error) throw error;
     },
     invalidateKeys: [queryKeys.bodyWeights.all],
   });
