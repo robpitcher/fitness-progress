@@ -35,3 +35,10 @@
 - **Layout**: `pb-16` wrapper div prevents page content from being hidden behind the fixed tab bar.
 - **Placeholder pages** in `src/pages/` — each renders centered page name with light/dark support.
 - **PR**: #41
+### 2026-03-24 — TypeScript Types & API Hooks (#8)
+- **Entity types** in `src/types/database.ts`: Profile, Exercise, Workout, WorkoutExercise, Set, BodyWeight — plus Insert and Update variants derived with `Omit`/`Pick`/`Partial`.
+- **Barrel export** in `src/types/index.ts` re-exports all types from `database.ts`.
+- **Query key factory** in `src/hooks/queryKeys.ts` — `queryKeys.workouts.list(userId)` returns `["workouts", "list", userId]` for TanStack Query cache keys.
+- **`useSupabaseQuery`** and **`useSupabaseQuerySingle`** in `src/hooks/useSupabaseQuery.ts` — generic wrappers around `useQuery` that accept a Supabase query builder and handle error/null unwrapping.
+- **`useSupabaseMutation`** in `src/hooks/useSupabaseMutation.ts` — wraps `useMutation` with automatic cache invalidation via `invalidateKeys`.
+- Schema note: `workouts.started_at` is nullable in the DB (no `NOT NULL` constraint), so the TS type is `string | null`.
