@@ -9,7 +9,8 @@
         { "name": "Morpheus", "role": "Lead" },
         { "name": "Trinity", "role": "Frontend Dev" },
         { "name": "Dozer", "role": "Backend Dev" },
-        { "name": "Tank", "role": "Tester" }
+        { "name": "Tank", "role": "Tester" },
+        { "name": "Niobe", "role": "Azure Cloud Engineer / DevOps" }
       ]
     }
   ]

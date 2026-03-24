@@ -11,6 +11,7 @@ How to decide who handles what.
 | Architecture / Design | Morpheus | System design, API contracts, data model decisions, scope calls |
 | Code review | Morpheus | Review PRs, check quality, architectural consistency |
 | Testing | Tank | Write tests, find edge cases, verify fixes, quality gates |
+| Azure / DevOps / CI/CD / Deployment | Niobe | Azure Static Web Apps, GitHub Actions, pipelines, environment config, DNS, monitoring |
 | Scope & priorities | Morpheus | What to build next, trade-offs, decisions |
 | Async issue work (bugs, tests, small features) | @copilot 🤖 | Well-defined tasks matching capability profile |
 | Session logging | Scribe | Automatic — never needs routing |

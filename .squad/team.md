@@ -16,6 +16,7 @@
 | Trinity | Frontend Dev | `.squad/agents/trinity/charter.md` | ✅ Active |
 | Dozer | Backend Dev | `.squad/agents/dozer/charter.md` | ✅ Active |
 | Tank | Tester | `.squad/agents/tank/charter.md` | ✅ Active |
+| Niobe | Azure Cloud Engineer / DevOps | `.squad/agents/niobe/charter.md` | ✅ Active |
 | Scribe | Session Logger | `.squad/agents/scribe/charter.md` | 📋 Silent |
 | Ralph | Work Monitor | — | 🔄 Monitor |
 
