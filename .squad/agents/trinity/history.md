@@ -17,3 +17,10 @@
 - **TypeScript strict mode** is on via `tsconfig.app.json`.
 - **Playwright**: `playwright.config.ts` at repo root — chromium only, tests in `./tests/`.
 - Vite scaffolded React 19 (compatible with the 18+ requirement in the PRD).
+
+### 2026-03-24 — Theme System (#5)
+- **ThemeContext** lives in `src/lib/ThemeContext.ts` (separated from component to satisfy `react-refresh/only-export-components` lint rule).
+- **ThemeProvider** in `src/components/ThemeProvider.tsx` wraps the app at the outermost layer (before QueryClientProvider).
+- **useTheme** hook in `src/hooks/useTheme.ts` returns `{ theme, setTheme, resolvedTheme }`.
+- **FOUC prevention**: inline `<script>` in `index.html` `<head>` reads `localStorage('theme')` and applies `.dark` class before first paint.
+- localStorage key is `'theme'`; valid values: `'light' | 'dark' | 'system'`. Defaults to `'system'` (OS preference).
