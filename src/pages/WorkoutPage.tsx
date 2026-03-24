@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Plus, Dumbbell, Loader2 } from "lucide-react";
 import { useAuth } from "../hooks/useAuth";
+import { useProfile } from "../hooks/useProfile";
 import {
   useTodayWorkout,
   useCreateWorkout,
@@ -12,6 +13,7 @@ import ExercisePicker from "../components/ExercisePicker";
 
 export default function WorkoutPage() {
   const { user } = useAuth();
+  const { profile } = useProfile();
   const userId = user?.id;
 
   const { data: todayWorkouts = [], isLoading: loadingWorkout } =
@@ -42,7 +44,7 @@ export default function WorkoutPage() {
 
   if (loadingWorkout) {
     return (
-      <div className="flex min-h-svh items-center justify-center bg-white dark:bg-gray-950">
+      <div className="flex min-h-svh items-center justify-center bg-white dark:bg-gray-950" role="status" aria-label="Loading workout">
         <Loader2 className="h-8 w-8 animate-spin text-indigo-600 dark:text-indigo-400" />
       </div>
     );
@@ -52,9 +54,14 @@ export default function WorkoutPage() {
   if (!workout) {
     return (
       <div className="flex min-h-svh flex-col items-center justify-center gap-4 bg-white px-4 dark:bg-gray-950">
-        <Dumbbell className="h-16 w-16 text-gray-300 dark:text-gray-700" />
+        <Dumbbell className="h-16 w-16 text-gray-300 dark:text-gray-700" aria-hidden="true" />
+        <h1 className="text-xl font-bold text-gray-900 dark:text-gray-100">
+          Start a Workout
+        </h1>
         <p className="text-center text-gray-500 dark:text-gray-400">
-          No workout started today
+          {profile?.display_name
+            ? `Ready to train, ${profile.display_name}?`
+            : "No workout started today"}
         </p>
         <button
           onClick={handleStartWorkout}
@@ -74,7 +81,7 @@ export default function WorkoutPage() {
           )}
         </button>
         {createWorkout.isError && (
-          <p className="text-sm text-red-600 dark:text-red-400">
+          <p role="alert" className="text-sm text-red-600 dark:text-red-400">
             {createWorkout.error.message}
           </p>
         )}
@@ -87,6 +94,11 @@ export default function WorkoutPage() {
     <div className="min-h-svh bg-white dark:bg-gray-950">
       {/* Header */}
       <div className="border-b border-gray-200 px-4 py-4 dark:border-gray-800">
+        {profile?.display_name && (
+          <p className="text-sm font-medium text-indigo-600 dark:text-indigo-400">
+            Hey, {profile.display_name} 👋
+          </p>
+        )}
         <h1 className="text-xl font-bold text-gray-900 dark:text-gray-100">
           Today&rsquo;s Workout
         </h1>
