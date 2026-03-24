@@ -48,3 +48,10 @@
 - Fix: changed `app_location` from `'/'` (repo root) to `'./dist'` (build output only), set `output_location: ''`, and added a step to copy `staticwebapp.config.json` into `dist/` so SWA routing rules are included.
 - Key lesson: when using `skip_app_build: true`, always point `app_location` directly at the final build output directory — don't rely on `.staticwebappignore` or `output_location` to filter.
 - `close_pull_request_job` left unchanged — it only runs `action: 'close'` and doesn't upload files.
+
+### SWA Workflow Cleanup (#71) — 2026-03-24
+- Removed `paths:` filter from push trigger — every push to `main` now triggers the SWA deploy. Path filters were too restrictive and could miss workflow, config, or infra changes.
+- Added `workflow_dispatch:` trigger for manual redeployment from the GitHub Actions UI — useful for debugging or redeploying after secrets rotation.
+- All `app_location: './dist'` fixes from #70 retained (copy SWA config step, `output_location: ''`, `skip_app_build: true`).
+- The existing `if:` condition (`github.event_name == 'push' || github.event.action != 'closed'`) already handles `workflow_dispatch` correctly — no modification needed.
+- PR #71 opened as draft on branch `squad/swa-workflow-cleanup`, branched from `main`.
