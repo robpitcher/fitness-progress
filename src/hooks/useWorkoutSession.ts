@@ -41,6 +41,24 @@ export function useTodayWorkout(userId: string | undefined) {
   );
 }
 
+
+/** Fetch a workout for the user on a specific date. */
+export function useWorkoutByDate(
+  userId: string | undefined,
+  date: string | undefined,
+) {
+  return useSupabaseQuery<Workout>(
+    queryKeys.workouts.byDate(userId ?? "", date ?? ""),
+    () =>
+      supabase
+        .from("workouts")
+        .select("*")
+        .eq("user_id", userId!)
+        .eq("date", date!),
+    { enabled: !!userId && !!date },
+  );
+}
+
 /** Create a new workout for today. */
 export function useCreateWorkout() {
   return useSupabaseMutation<Workout, { user_id: string }>({

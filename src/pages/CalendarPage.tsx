@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { format, isSameDay } from "date-fns";
-import { Dumbbell, Loader2, Plus } from "lucide-react";
+import { Dumbbell, Loader2, Pencil, Plus } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import Calendar from "../components/Calendar";
 import { useWorkoutDates } from "../hooks/useWorkouts";
@@ -82,6 +82,10 @@ export default function CalendarPage() {
     navigate("/workout");
   };
 
+  const handleEditWorkout = (date: string) => {
+    navigate(`/workout/${date}`);
+  };
+
   return (
     <div className="min-h-svh bg-white px-4 pt-6 pb-4 dark:bg-gray-950">
       <h1 className="mb-4 text-2xl font-bold text-gray-900 dark:text-gray-100">
@@ -147,6 +151,16 @@ export default function CalendarPage() {
                   {detail.workout.notes}
                 </p>
               )}
+
+              {/* Edit Workout button */}
+              <button
+                type="button"
+                onClick={() => handleEditWorkout(detail.workout.date)}
+                className="mt-1 inline-flex min-h-[44px] items-center gap-2 rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white active:bg-indigo-700 dark:bg-indigo-500 dark:active:bg-indigo-600"
+              >
+                <Pencil className="h-4 w-4" />
+                Edit Workout
+              </button>
             </div>
           ) : (
             <div className="mt-3">

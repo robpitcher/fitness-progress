@@ -20,5 +20,13 @@ export default defineConfig({
     command: 'npm run dev',
     url: 'http://localhost:5173',
     reuseExistingServer: !process.env.CI,
+    env: {
+      ...process.env,
+      VITE_SUPABASE_URL:
+        process.env.VITE_SUPABASE_URL ?? 'https://test-placeholder.supabase.co',
+      VITE_SUPABASE_ANON_KEY:
+        process.env.VITE_SUPABASE_ANON_KEY ??
+        'eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJ0ZXN0IiwiZXhwIjoyMDAwMDAwMDAwfQ.placeholder',
+    },
   },
 })
