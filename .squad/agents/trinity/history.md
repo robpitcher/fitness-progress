@@ -62,3 +62,12 @@
 - **useCreateExercise** hook (`src/hooks/useCreateExercise.ts`) — mutation with `queryKeys.exercises.all` invalidation.
 - Both hooks follow existing `useSupabaseQuery` / `useSupabaseMutation` patterns from #8.
 - **PR:** #43
+
+### 2026-03-24 — Set Entry with Inline Previous Performance (#18)
+- **SetEntry** component (`src/components/SetEntry.tsx`) — renders set rows inside each exercise card with set number, reps input, weight input, and delete button.
+- **useSets** hook (`src/hooks/useSets.ts`) — `useSets`, `useAddSet`, `useUpdateSet`, `useDeleteSet` for full CRUD on the `sets` table.
+- **usePreviousPerformance** hook — fetches sets from the most recent prior workout containing the same exercise (excludes current workout); displayed as "Last: 3×10 @ 135 lbs".
+- Debounced real-time save (500ms) on reps/weight input changes via `useUpdateSet`.
+- Touch targets ≥ 44px on all inputs and buttons. `inputMode="numeric"` / `"decimal"` for mobile keyboards.
+- **WorkoutPage** updated to render `<SetEntry>` beneath each exercise in the active workout view.
+- **PR:** #53
