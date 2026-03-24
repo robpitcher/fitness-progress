@@ -11,3 +11,18 @@
 - Playwright testing framework adopted for E2E tests. Browsers installed in devcontainer via `npx playwright install --with-deps` in postCreateCommand; VS Code extension `ms-playwright.playwright` available. `@playwright/test` will be added as devDependency once `package.json` is created.
 - Vite 8 does NOT load `.env` files via dotenv. Supabase env vars must be passed via `process.env` (e.g. `webServer.env` in `playwright.config.ts`). Tests mock Supabase auth via `localStorage` session injection and intercept REST API calls via `page.route()`.
 - E2E workout logging tests added in PR #64 (issue #32). Pattern: `setupSupabaseMocks(page, options)` helper injects auth session + intercepts all Supabase endpoints. Reusable across test suites.
+- Charts page (`/charts`) uses a single exercise dropdown selector (`#exercise-select`) — no internal tab UI. Bottom tab bar handles cross-page navigation. E2E tests follow the body-weight.spec.ts pattern: direct route navigation, semantic locators, no auth mocking.
+
+## E2E Auth Test Suite — Issue #17
+
+**Date:** 2026-03-24  
+**PR:** #65  
+**Branch:** `squad/17-e2e-auth`
+
+Implemented 10 Playwright E2E tests for authentication UI:
+- Login page rendering, navigation, and empty-field validation (4 tests)
+- Signup page rendering, navigation, empty-field validation, and short password constraint (4 tests)
+- Protected route redirection for unauthenticated users (2 tests)
+
+Supabase API calls mocked via `page.route()` — no backend needed.  
+Playwright config updated with fallback `VITE_SUPABASE_*` env vars in `webServer.env`.
