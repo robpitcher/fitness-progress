@@ -65,6 +65,7 @@ export default function App() {
               <Route element={<ProtectedLayout />}>
                 <Route path="/" element={<Navigate to="/workout" replace />} />
                 <Route path="/workout" element={<WorkoutPage />} />
+                <Route path="/workout/:date" element={<WorkoutPage />} />
                 <Route path="/calendar" element={<CalendarPage />} />
                 <Route path="/weight" element={<WeightPage />} />
                 <Route path="/charts" element={<ChartsPage />} />

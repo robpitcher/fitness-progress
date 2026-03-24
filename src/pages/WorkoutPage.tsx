@@ -1,5 +1,6 @@
 import { useState } from "react";
-import { Plus, Dumbbell, Loader2 } from "lucide-react";
+import { useParams, useNavigate } from "react-router-dom";
+import { Plus, Dumbbell, Loader2, ArrowLeft } from "lucide-react";
 import { useAuth } from "../hooks/useAuth";
 import { useProfile } from "../hooks/useProfile";
 import {
@@ -7,19 +8,31 @@ import {
   useCreateWorkout,
   useWorkoutExercises,
   useAddWorkoutExercise,
+  useWorkoutByDate,
 } from "../hooks/useWorkoutSession";
 import type { Exercise } from "../types";
 import ExercisePicker from "../components/ExercisePicker";
 import SetEntry from "../components/SetEntry";
 
 export default function WorkoutPage() {
+  const { date: dateParam } = useParams<{ date: string }>();
+  const navigate = useNavigate();
   const { user } = useAuth();
   const { profile } = useProfile();
   const userId = user?.id;
 
-  const { data: todayWorkouts = [], isLoading: loadingWorkout } =
-    useTodayWorkout(userId);
-  const workout = todayWorkouts[0] ?? null;
+  const isEditingPast = !!dateParam;
+
+  const { data: todayWorkouts = [], isLoading: loadingToday } =
+    useTodayWorkout(isEditingPast ? undefined : userId);
+  const todayWorkout = todayWorkouts[0] ?? null;
+
+  const { data: pastWorkouts = [], isLoading: loadingPast } =
+    useWorkoutByDate(isEditingPast ? userId : undefined, dateParam);
+  const pastWorkout = pastWorkouts[0] ?? null;
+
+  const workout = isEditingPast ? pastWorkout : todayWorkout;
+  const loadingWorkout = isEditingPast ? loadingPast : loadingToday;
 
   const { data: workoutExercises = [], isLoading: loadingExercises } =
     useWorkoutExercises(workout?.id);
@@ -43,10 +56,46 @@ export default function WorkoutPage() {
     });
   };
 
+  const workoutDateLabel = workout
+    ? new Date(workout.date + "T00:00:00").toLocaleDateString(undefined, {
+        weekday: "long",
+        month: "long",
+        day: "numeric",
+      })
+    : dateParam
+      ? new Date(dateParam + "T00:00:00").toLocaleDateString(undefined, {
+          weekday: "long",
+          month: "long",
+          day: "numeric",
+        })
+      : "";
+
   if (loadingWorkout) {
     return (
       <div className="flex min-h-svh items-center justify-center bg-white dark:bg-gray-950" role="status" aria-label="Loading workout">
         <Loader2 className="h-8 w-8 animate-spin text-indigo-600 dark:text-indigo-400" />
+      </div>
+    );
+  }
+
+  // Editing a past date with no workout found
+  if (isEditingPast && !workout) {
+    return (
+      <div className="flex min-h-svh flex-col items-center justify-center gap-4 bg-white px-4 dark:bg-gray-950">
+        <Dumbbell className="h-16 w-16 text-gray-300 dark:text-gray-700" aria-hidden="true" />
+        <h1 className="text-xl font-bold text-gray-900 dark:text-gray-100">
+          No Workout Found
+        </h1>
+        <p className="text-center text-gray-500 dark:text-gray-400">
+          No workout was logged on {workoutDateLabel}.
+        </p>
+        <button
+          onClick={() => navigate("/calendar")}
+          className="flex min-h-[44px] items-center gap-2 rounded-xl bg-indigo-600 px-6 py-3 text-base font-semibold text-white shadow-sm transition-colors hover:bg-indigo-700 dark:bg-indigo-500 dark:hover:bg-indigo-600"
+        >
+          <ArrowLeft className="h-5 w-5" />
+          Back to Calendar
+        </button>
       </div>
     );
   }
@@ -90,25 +139,31 @@ export default function WorkoutPage() {
     );
   }
 
-  // Active workout
+  // Active workout (today or editing past)
   return (
     <div className="min-h-svh bg-white dark:bg-gray-950">
       {/* Header */}
       <div className="border-b border-gray-200 px-4 py-4 dark:border-gray-800">
-        {profile?.display_name && (
-          <p className="text-sm font-medium text-indigo-600 dark:text-indigo-400">
-            Hey, {profile.display_name} 👋
-          </p>
+        {isEditingPast ? (
+          <button
+            onClick={() => navigate("/calendar")}
+            className="mb-1 flex min-h-[44px] items-center gap-1 text-sm font-medium text-indigo-600 dark:text-indigo-400"
+          >
+            <ArrowLeft className="h-4 w-4" />
+            Back to Calendar
+          </button>
+        ) : (
+          profile?.display_name && (
+            <p className="text-sm font-medium text-indigo-600 dark:text-indigo-400">
+              Hey, {profile.display_name} 👋
+            </p>
+          )
         )}
         <h1 className="text-xl font-bold text-gray-900 dark:text-gray-100">
-          Today&rsquo;s Workout
+          {isEditingPast ? "Edit Workout" : "Today\u2019s Workout"}
         </h1>
         <p className="mt-0.5 text-sm text-gray-500 dark:text-gray-400">
-          {new Date(workout.date).toLocaleDateString(undefined, {
-            weekday: "long",
-            month: "long",
-            day: "numeric",
-          })}
+          {workoutDateLabel}
         </p>
       </div>
 
