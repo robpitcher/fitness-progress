@@ -10,6 +10,7 @@ import {
 } from "../hooks/useWorkoutSession";
 import type { Exercise } from "../types";
 import ExercisePicker from "../components/ExercisePicker";
+import SetEntry from "../components/SetEntry";
 
 export default function WorkoutPage() {
   const { user } = useAuth();
@@ -129,21 +130,32 @@ export default function WorkoutPage() {
             {workoutExercises.map((we) => (
               <li
                 key={we.id}
-                className="flex items-center gap-3 rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 dark:border-gray-800 dark:bg-gray-900"
+                className="rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 dark:border-gray-800 dark:bg-gray-900"
               >
-                <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-indigo-100 text-sm font-bold text-indigo-700 dark:bg-indigo-900/40 dark:text-indigo-300">
-                  {we.order}
-                </span>
-                <div className="min-w-0 flex-1">
-                  <p className="truncate text-sm font-medium text-gray-900 dark:text-gray-100">
-                    {we.exercises.name}
-                  </p>
-                  {we.exercises.category && (
-                    <p className="truncate text-xs text-gray-500 dark:text-gray-400">
-                      {we.exercises.category}
+                <div className="flex items-center gap-3">
+                  <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-indigo-100 text-sm font-bold text-indigo-700 dark:bg-indigo-900/40 dark:text-indigo-300">
+                    {we.order}
+                  </span>
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-sm font-medium text-gray-900 dark:text-gray-100">
+                      {we.exercises.name}
                     </p>
-                  )}
+                    {we.exercises.category && (
+                      <p className="truncate text-xs text-gray-500 dark:text-gray-400">
+                        {we.exercises.category}
+                      </p>
+                    )}
+                  </div>
                 </div>
+
+                {userId && workout && (
+                  <SetEntry
+                    workoutExerciseId={we.id}
+                    exerciseId={we.exercise_id}
+                    workoutId={workout.id}
+                    userId={userId}
+                  />
+                )}
               </li>
             ))}
           </ul>
