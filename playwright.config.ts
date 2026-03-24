@@ -21,7 +21,6 @@ export default defineConfig({
     url: 'http://localhost:5173',
     reuseExistingServer: !process.env.CI,
     env: {
-      ...process.env,
       VITE_SUPABASE_URL:
         process.env.VITE_SUPABASE_URL ?? 'https://test-placeholder.supabase.co',
       VITE_SUPABASE_ANON_KEY:
