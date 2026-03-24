@@ -119,7 +119,7 @@ create policy "Users can delete own workout_exercises"
   );
 
 -- ============================================================
--- sets: CRUD through workout_exercises -> workouts.user_id
+-- sets: CRUD through workout_exercises → workouts.user_id
 -- ============================================================
 create policy "Users can view own sets"
   on sets for select
