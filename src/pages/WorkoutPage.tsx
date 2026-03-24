@@ -188,7 +188,7 @@ export default function WorkoutPage() {
         </button>
 
         {addExercise.isError && (
-          <p role="alert" className="mt-2 text-center text-sm text-red-600 dark:text-red-400">
+          <p className="mt-2 text-center text-sm text-red-600 dark:text-red-400">
             {addExercise.error.message}
           </p>
         )}
