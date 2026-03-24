@@ -9,3 +9,4 @@
 
 <!-- Append new learnings below. Each entry is something lasting about the project. -->
 - Playwright testing framework adopted for E2E tests. Browsers installed in devcontainer via `npx playwright install --with-deps` in postCreateCommand; VS Code extension `ms-playwright.playwright` available. `@playwright/test` will be added as devDependency once `package.json` is created.
+- Charts page (`/charts`) uses a single exercise dropdown selector (`#exercise-select`) — no internal tab UI. Bottom tab bar handles cross-page navigation. E2E tests follow the body-weight.spec.ts pattern: direct route navigation, semantic locators, no auth mocking.
