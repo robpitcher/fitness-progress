@@ -1,7 +1,7 @@
 import { useState, type FormEvent } from "react";
-import { CheckCircle } from "lucide-react";
+import { CheckCircle, Scale } from "lucide-react";
 import { useAuth } from "../hooks/useAuth";
-import { useUpsertBodyWeight } from "../hooks/useBodyWeight";
+import { useBodyWeights, useUpsertBodyWeight } from "../hooks/useBodyWeight";
 
 function todayISO(): string {
   const d = new Date();
@@ -11,9 +11,15 @@ function todayISO(): string {
   return `${yyyy}-${mm}-${dd}`;
 }
 
+function formatDate(iso: string): string {
+  const [year, month, day] = iso.split("-");
+  return `${month}/${day}/${year}`;
+}
+
 export default function WeightPage() {
   const { user } = useAuth();
   const upsert = useUpsertBodyWeight();
+  const { data: entries = [], isLoading } = useBodyWeights(user?.id);
 
   const [date, setDate] = useState(todayISO);
   const [weight, setWeight] = useState("");
@@ -104,6 +110,42 @@ export default function WeightPage() {
             {upsert.isPending ? "Saving…" : "Save"}
           </button>
         </form>
+
+        {/* History List */}
+        <section>
+          <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
+            History
+          </h2>
+
+          {isLoading ? (
+            <p className="mt-3 text-sm text-gray-500 dark:text-gray-400">
+              Loading…
+            </p>
+          ) : entries.length === 0 ? (
+            <div className="mt-3 flex flex-col items-center rounded-lg border border-dashed border-gray-300 py-8 dark:border-gray-700">
+              <Scale className="h-8 w-8 text-gray-400 dark:text-gray-500" />
+              <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">
+                No entries yet. Log your first weight above!
+              </p>
+            </div>
+          ) : (
+            <ul className="mt-3 divide-y divide-gray-200 overflow-y-auto dark:divide-gray-800">
+              {entries.map((entry) => (
+                <li
+                  key={entry.id}
+                  className="flex items-center justify-between py-3"
+                >
+                  <span className="text-sm text-gray-600 dark:text-gray-400">
+                    {formatDate(entry.date)}
+                  </span>
+                  <span className="text-sm font-medium text-gray-900 dark:text-gray-100">
+                    {entry.weight} lbs
+                  </span>
+                </li>
+              ))}
+            </ul>
+          )}
+        </section>
       </div>
     </div>
   );
