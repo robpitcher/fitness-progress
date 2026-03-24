@@ -33,4 +33,11 @@ export const queryKeys = {
     list: (userId: string) => ["bodyWeights", "list", userId] as const,
     detail: (id: string) => ["bodyWeights", "detail", id] as const,
   },
+  exerciseProgress: {
+    all: ["exerciseProgress"] as const,
+    detail: (exerciseId: string) =>
+      ["exerciseProgress", "detail", exerciseId] as const,
+    exerciseList: (userId: string) =>
+      ["exerciseProgress", "exerciseList", userId] as const,
+  },
 } as const;
