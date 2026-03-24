@@ -42,3 +42,9 @@
 - Only `dist/` (build output) and `staticwebapp.config.json` (SWA routing) get uploaded now.
 - The workflow YAML itself needed no changes — `app_location: '/'`, `output_location: 'dist'`, `skip_app_build: true` were already correct.
 - Committed to branch `squad/swa-path-filters` (PR #70).
+
+### SWA Deploy Path Fix (#70, follow-up) — 2026-03-24
+- `.staticwebappignore` alone did NOT fix the "too many static files" error — with `skip_app_build: true`, the SWA deploy action ignores `.staticwebappignore` and still walks everything under `app_location`.
+- Fix: changed `app_location` from `'/'` (repo root) to `'./dist'` (build output only), set `output_location: ''`, and added a step to copy `staticwebapp.config.json` into `dist/` so SWA routing rules are included.
+- Key lesson: when using `skip_app_build: true`, always point `app_location` directly at the final build output directory — don't rely on `.staticwebappignore` or `output_location` to filter.
+- `close_pull_request_job` left unchanged — it only runs `action: 'close'` and doesn't upload files.
