@@ -15,6 +15,8 @@ export const queryKeys = {
     all: ["workouts"] as const,
     list: (userId: string) => ["workouts", "list", userId] as const,
     detail: (id: string) => ["workouts", "detail", id] as const,
+    dates: (userId: string, month: string) =>
+      ["workouts", "dates", userId, month] as const,
   },
   workoutExercises: {
     all: ["workoutExercises"] as const,
