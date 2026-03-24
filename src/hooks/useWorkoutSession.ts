@@ -1,12 +1,21 @@
+import { useQuery } from "@tanstack/react-query";
 import { supabase } from "../lib/supabase";
 import { useSupabaseQuery } from "./useSupabaseQuery";
 import { useSupabaseMutation } from "./useSupabaseMutation";
 import { queryKeys } from "./queryKeys";
-import type { Workout, WorkoutExercise, Exercise } from "../types";
+import type { Workout, WorkoutExercise, Exercise, Set } from "../types";
 
 // Joined shape returned when selecting workout_exercises with exercise data
 export interface WorkoutExerciseWithExercise extends WorkoutExercise {
   exercises: Exercise;
+}
+
+// Shape for workout summary: exercise with all its sets
+export interface WorkoutSummaryExercise {
+  order: number;
+  name: string;
+  category: string | null;
+  sets: Pick<Set, "set_number" | "reps" | "weight">[];
 }
 
 function todayDateString(): string {
@@ -88,16 +97,70 @@ export function useAddWorkoutExercise() {
   });
 }
 
-/** Delete an exercise from a workout (cascade deletes its sets). */
-export function useDeleteWorkoutExercise() {
-  return useSupabaseMutation<void, string>({
-    mutationFn: async (id) => {
-      const { error } = await supabase
-        .from("workout_exercises")
-        .delete()
-        .eq("id", id);
+/** Mark a workout as completed by setting completed_at. */
+export function useCompleteWorkout() {
+  return useSupabaseMutation<Workout, { id: string }>({
+    mutationFn: async ({ id }) => {
+      const { data, error } = await supabase
+        .from("workouts")
+        .update({ completed_at: new Date().toISOString() })
+        .eq("id", id)
+        .select()
+        .single();
       if (error) throw error;
+      return data as Workout;
     },
-    invalidateKeys: [queryKeys.workoutExercises.all, queryKeys.sets.all],
+    invalidateKeys: [queryKeys.workouts.all],
+  });
+}
+
+/** Fetch workout summary: exercises with their sets for a completed workout. */
+export function useWorkoutSummary(workoutId: string | undefined) {
+  return useQuery<WorkoutSummaryExercise[]>({
+    queryKey: ["workoutSummary", workoutId] as const,
+    queryFn: async () => {
+      const { data: exercises, error: exError } = await supabase
+        .from("workout_exercises")
+        .select('id, "order", exercises(name, category)')
+        .eq("workout_id", workoutId!)
+        .order('"order"', { ascending: true });
+
+      if (exError) throw exError;
+      if (!exercises || exercises.length === 0) return [];
+
+      const weIds = exercises.map((e) => e.id);
+      const { data: sets, error: setsError } = await supabase
+        .from("sets")
+        .select("workout_exercise_id, set_number, reps, weight")
+        .in("workout_exercise_id", weIds)
+        .order("set_number", { ascending: true });
+
+      if (setsError) throw setsError;
+
+      const setsByWe = new Map<
+        string,
+        Pick<Set, "set_number" | "reps" | "weight">[]
+      >();
+      for (const s of sets ?? []) {
+        const list = setsByWe.get(s.workout_exercise_id) ?? [];
+        list.push({ set_number: s.set_number, reps: s.reps, weight: s.weight });
+        setsByWe.set(s.workout_exercise_id, list);
+      }
+
+      return exercises.map((e) => {
+        const ex = e.exercises as unknown as {
+          name: string;
+          category: string | null;
+        };
+        return {
+          order: e.order,
+          name: ex.name,
+          category: ex.category,
+          sets: setsByWe.get(e.id) ?? [],
+        };
+      });
+    },
+    enabled: !!workoutId,
+    staleTime: 5 * 60 * 1000,
   });
 }
