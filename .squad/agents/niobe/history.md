@@ -18,3 +18,10 @@
 ## Learnings
 
 (Append new learnings below this line)
+
+### Bicep IaC for Static Web App (#66) — 2026-03-24
+- Created `infra/main.bicep` (subscription-scoped), `infra/modules/static-web-app.bicep` (SWA resource), and `infra/main.bicepparam` (defaults).
+- SWA build properties aligned with Vite/React: `appLocation: '/'`, `outputLocation: 'dist'`, `apiLocation: ''`.
+- `deploymentToken` output uses `listSecrets()` — needs `#disable-next-line outputs-should-not-contain-secrets` to suppress linter warning.
+- Validated clean with `az bicep build`. Opened draft PR #68 on branch `squad/66-bicep-iac`.
+- Key files added to project: `infra/main.bicep`, `infra/modules/static-web-app.bicep`, `infra/main.bicepparam`.
