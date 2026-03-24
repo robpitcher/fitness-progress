@@ -90,13 +90,15 @@ test.describe('Signup page', () => {
     expect(validity).toBe(true)
   })
 
-  test('shows password length error for short password', async ({ page }) => {
+  test('shows validation for short password', async ({ page }) => {
     await page.fill('#signup-email', 'user@example.com')
     await page.fill('#signup-password', '12345')
     await page.click('button[type="submit"]')
-    await expect(page.locator('[role="alert"]')).toHaveText(
-      'Password must be at least 6 characters'
+    const password = page.locator('#signup-password')
+    const tooShort = await password.evaluate(
+      (el: HTMLInputElement) => el.validity.tooShort
     )
+    expect(tooShort).toBe(true)
   })
 })
 
