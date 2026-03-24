@@ -83,7 +83,7 @@ export default function WeightPage() {
   }
 
   return (
-    <div className="min-h-svh bg-white px-4 pt-6 pb-20 dark:bg-gray-950">
+    <div className="min-h-svh bg-white px-4 pt-6 pb-4 dark:bg-gray-950">
       <div className="mx-auto w-full max-w-sm space-y-6">
         <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">
           Log Weight
@@ -129,7 +129,7 @@ export default function WeightPage() {
           </div>
 
           {upsert.isError && (
-            <div className="rounded-lg bg-red-50 p-3 text-sm text-red-700 dark:bg-red-900/30 dark:text-red-400">
+            <div role="alert" className="rounded-lg bg-red-50 p-3 text-sm text-red-700 dark:bg-red-900/30 dark:text-red-400">
               {upsert.error?.message ?? "Failed to save"}
             </div>
           )}

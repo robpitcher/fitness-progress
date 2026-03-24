@@ -30,9 +30,9 @@ function ProtectedLayout() {
 
   return (
     <>
-      <div className="pb-16">
+      <main className="pb-20">
         <Outlet />
-      </div>
+      </main>
       <BottomTabBar />
     </>
   )
