@@ -105,3 +105,17 @@ export function useAddWorkoutExercise() {
     invalidateKeys: [queryKeys.workoutExercises.all],
   });
 }
+
+/** Delete an exercise from a workout (cascade deletes its sets). */
+export function useDeleteWorkoutExercise() {
+  return useSupabaseMutation<void, string>({
+    mutationFn: async (id) => {
+      const { error } = await supabase
+        .from("workout_exercises")
+        .delete()
+        .eq("id", id);
+      if (error) throw error;
+    },
+    invalidateKeys: [queryKeys.workoutExercises.all, queryKeys.sets.all],
+  });
+}

@@ -39,7 +39,6 @@ export function filterByDateRange<T extends { date: string }>(
   range: TimeRange,
 ): T[] {
   const start = getStartDate(range);
-  if (!start) return data;
   const startISO = start.toISOString().slice(0, 10);
   return data.filter((d) => d.date >= startISO);
 }

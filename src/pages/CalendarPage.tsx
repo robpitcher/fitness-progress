@@ -87,7 +87,11 @@ export default function CalendarPage() {
   };
 
   return (
-    <div className="min-h-svh bg-white px-4 pt-6 pb-20 dark:bg-gray-950">
+    <div className="min-h-svh bg-white px-4 pt-6 pb-4 dark:bg-gray-950">
+      <h1 className="mb-4 text-2xl font-bold text-gray-900 dark:text-gray-100">
+        Calendar
+      </h1>
+
       <Calendar
         currentMonth={currentMonth}
         onMonthChange={setCurrentMonth}

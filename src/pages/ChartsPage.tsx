@@ -22,7 +22,7 @@ export default function ChartsPage() {
   } = useExerciseProgress(selectedExerciseId || undefined);
 
   return (
-    <div className="min-h-svh bg-white px-4 pt-6 dark:bg-gray-950">
+    <div className="min-h-svh bg-white px-4 pt-6 pb-4 dark:bg-gray-950">
       <h1 className="mb-6 text-2xl font-bold text-gray-900 dark:text-gray-100">
         Charts
       </h1>
@@ -39,7 +39,7 @@ export default function ChartsPage() {
         value={selectedExerciseId}
         onChange={(e) => setSelectedExerciseId(e.target.value)}
         disabled={exercisesLoading}
-        className="mb-6 w-full rounded-lg border border-gray-300 bg-white px-3 py-2.5 text-gray-900 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500 disabled:opacity-50 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 dark:focus:border-indigo-400 dark:focus:ring-indigo-400"
+        className="mb-6 min-h-[44px] w-full rounded-lg border border-gray-300 bg-white px-3 py-2.5 text-base text-gray-900 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500 disabled:opacity-50 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 dark:focus:border-indigo-400 dark:focus:ring-indigo-400"
       >
         <option value="">
           {exercisesLoading ? "Loading…" : "Select an exercise"}

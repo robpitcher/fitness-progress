@@ -91,6 +91,8 @@ export default function Calendar({
               key={day.toISOString()}
               type="button"
               onClick={() => onSelectDate(day)}
+              aria-label={format(day, "EEEE, MMMM d, yyyy")}
+              aria-pressed={selected}
               className={`relative flex min-h-[44px] flex-col items-center justify-center transition-colors ${
                 !inMonth
                   ? "text-gray-300 dark:text-gray-700"
