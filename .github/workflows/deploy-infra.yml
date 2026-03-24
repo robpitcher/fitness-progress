@@ -1,0 +1,65 @@
+name: Deploy Infrastructure
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'infra/**'
+  workflow_dispatch:
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  deploy-infra:
+    name: Deploy Azure Infrastructure
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Login to Azure via OIDC
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Deploy Bicep template
+        id: deploy
+        run: |
+          DEPLOYMENT_NAME="fitness-progress-$(date +%Y%m%d%H%M%S)"
+          echo "Deploying as: $DEPLOYMENT_NAME"
+
+          az deployment sub create \
+            --name "$DEPLOYMENT_NAME" \
+            --location eastus2 \
+            --template-file infra/main.bicep \
+            --output json > deployment-output.json
+
+          echo "Deployment completed successfully."
+
+      - name: Extract deployment outputs
+        run: |
+          # Extract SWA deployment token from Bicep outputs and mask it
+          SWA_TOKEN=$(jq -r '.properties.outputs.swaDeploymentToken.value // empty' deployment-output.json)
+          if [ -n "$SWA_TOKEN" ]; then
+            echo "::add-mask::$SWA_TOKEN"
+            echo "SWA deployment token extracted and masked."
+            echo "swa_token=$SWA_TOKEN" >> "$GITHUB_OUTPUT"
+          else
+            echo "No SWA deployment token found in outputs (may not be configured in Bicep template yet)."
+          fi
+
+          # Display other outputs for visibility
+          echo "--- Deployment Outputs ---"
+          jq '.properties.outputs | to_entries[] | select(.key != "swaDeploymentToken") | "\(.key): \(.value.value)"' deployment-output.json -r 2>/dev/null || echo "No additional outputs."
+
+          rm -f deployment-output.json
+
+      - name: Logout from Azure
+        if: always()
+        run: az logout
