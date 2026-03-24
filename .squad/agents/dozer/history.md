@@ -8,3 +8,4 @@
 ## Learnings
 
 <!-- Append new learnings below. Each entry is something lasting about the project. -->
+- Playwright added to devcontainer: browsers installed via `npx playwright install --with-deps` in postCreateCommand, VS Code extension `ms-playwright.playwright` added. No package.json exists yet so `@playwright/test` was not added as a dep — will need to be added when package.json is created.

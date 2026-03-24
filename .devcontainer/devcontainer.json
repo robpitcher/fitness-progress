@@ -10,7 +10,7 @@
     }
   },
 
-  "postCreateCommand": "npm install -g @githubnext/github-copilot-cli && echo '✅ Dev container ready'",
+  "postCreateCommand": "npm install -g @githubnext/github-copilot-cli && npx playwright install --with-deps && echo '✅ Dev container ready'",
 
   "customizations": {
     "vscode": {
@@ -33,7 +33,8 @@
       "extensions": [
         "bierner.markdown-mermaid",
         "dbaeumer.vscode-eslint",
-        "GitHub.copilot-chat"
+        "GitHub.copilot-chat",
+        "ms-playwright.playwright"
       ]
     }
   },
