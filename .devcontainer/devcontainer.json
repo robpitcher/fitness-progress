@@ -45,10 +45,5 @@
       "label": "Vite Dev Server",
       "onAutoForward": "openBrowser"
     }
-  },
-
-  "remoteEnv": {
-    "VITE_SUPABASE_URL": "${localEnv:VITE_SUPABASE_URL}",
-    "VITE_SUPABASE_ANON_KEY": "${localEnv:VITE_SUPABASE_ANON_KEY}"
   }
 }
