@@ -35,3 +35,10 @@
 - `deploymentToken` output uses `listSecrets()` — needs `#disable-next-line outputs-should-not-contain-secrets` to suppress linter warning.
 - Validated clean with `az bicep build`. Opened draft PR #68 on branch `squad/66-bicep-iac`.
 - Key files added to project: `infra/main.bicep`, `infra/modules/static-web-app.bicep`, `infra/main.bicepparam`.
+
+### SWA Deploy File Count Fix (#70) — 2026-03-24
+- Azure SWA Free tier deployment was failing with "The number of static files was too large" because the deploy action walks `app_location` (repo root) even with `skip_app_build: true`.
+- Created `.staticwebappignore` at repo root to exclude `node_modules/`, `.squad/`, `.git/`, `.github/`, `supabase/`, `infra/`, `spec/`, `tests/`, `test-results/`, `playwright-report/`, `src/`, `public/`, and config/meta files.
+- Only `dist/` (build output) and `staticwebapp.config.json` (SWA routing) get uploaded now.
+- The workflow YAML itself needed no changes — `app_location: '/'`, `output_location: 'dist'`, `skip_app_build: true` were already correct.
+- Committed to branch `squad/swa-path-filters` (PR #70).
