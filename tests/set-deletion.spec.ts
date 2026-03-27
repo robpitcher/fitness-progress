@@ -138,7 +138,6 @@ async function setupSupabaseMocksWithSets(page: Page) {
   // Workout exercises
   await page.route(`${SUPABASE_URL}/rest/v1/workout_exercises*`, (route) => {
     const method = route.request().method()
-    const url = route.request().url()
 
     if (method === 'DELETE') {
       // Handle DELETE request
@@ -166,11 +165,10 @@ async function setupSupabaseMocksWithSets(page: Page) {
   // Sets
   await page.route(`${SUPABASE_URL}/rest/v1/sets*`, (route) => {
     const method = route.request().method()
-    const url = route.request().url()
 
     if (method === 'DELETE') {
       // Extract the ID from the query parameters
-      const urlObj = new URL(url)
+      const urlObj = new URL(route.request().url())
       const eqParam = urlObj.searchParams.get('id')
       if (eqParam && eqParam.startsWith('eq.')) {
         const setId = eqParam.substring(3)
