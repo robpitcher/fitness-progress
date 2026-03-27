@@ -44,7 +44,8 @@ export default function WorkoutPage() {
 
   const handleStartWorkout = () => {
     if (!userId) return;
-    createWorkout.mutate({ user_id: userId });
+    // Pass the date parameter if editing a past date, otherwise create for today
+    createWorkout.mutate({ user_id: userId, date: dateParam });
   };
 
   const handleSelectExercise = (exercise: Exercise) => {
@@ -89,13 +90,37 @@ export default function WorkoutPage() {
         <p className="text-center text-gray-500 dark:text-gray-400">
           No workout was logged on {workoutDateLabel}.
         </p>
-        <button
-          onClick={() => navigate("/calendar")}
-          className="flex min-h-[44px] items-center gap-2 rounded-xl bg-indigo-600 px-6 py-3 text-base font-semibold text-white shadow-sm transition-colors hover:bg-indigo-700 dark:bg-indigo-500 dark:hover:bg-indigo-600"
-        >
-          <ArrowLeft className="h-5 w-5" />
-          Back to Calendar
-        </button>
+        <div className="flex gap-3">
+          <button
+            onClick={() => navigate("/calendar")}
+            className="flex min-h-[44px] items-center gap-2 rounded-xl border-2 border-gray-300 px-6 py-3 text-base font-semibold text-gray-700 shadow-sm transition-colors hover:bg-gray-50 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-gray-900"
+          >
+            <ArrowLeft className="h-5 w-5" />
+            Back to Calendar
+          </button>
+          <button
+            onClick={handleStartWorkout}
+            disabled={createWorkout.isPending}
+            className="flex min-h-[44px] items-center gap-2 rounded-xl bg-indigo-600 px-6 py-3 text-base font-semibold text-white shadow-sm transition-colors hover:bg-indigo-700 disabled:opacity-50 dark:bg-indigo-500 dark:hover:bg-indigo-600"
+          >
+            {createWorkout.isPending ? (
+              <>
+                <Loader2 className="h-5 w-5 animate-spin" />
+                Starting…
+              </>
+            ) : (
+              <>
+                <Plus className="h-5 w-5" />
+                Start Workout
+              </>
+            )}
+          </button>
+        </div>
+        {createWorkout.isError && (
+          <p role="alert" className="text-sm text-red-600 dark:text-red-400">
+            {createWorkout.error.message}
+          </p>
+        )}
       </div>
     );
   }

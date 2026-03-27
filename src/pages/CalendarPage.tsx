@@ -79,12 +79,21 @@ export default function CalendarPage() {
     useWorkoutDetail(selectedDateStr);
 
   const handleStartWorkout = () => {
-    navigate("/workout");
+    // If a past date is selected, navigate to workout creation for that date
+    if (selectedDateStr && !isSameDay(selectedDate!, new Date())) {
+      navigate(`/workout/${selectedDateStr}`);
+    } else {
+      // For today, navigate to the default workout page
+      navigate("/workout");
+    }
   };
 
   const handleEditWorkout = (date: string) => {
     navigate(`/workout/${date}`);
   };
+
+  // Check if selected date is in the future
+  const isFutureDate = selectedDate && selectedDate > new Date();
 
   return (
     <div className="min-h-svh bg-white px-4 pt-6 pb-4 dark:bg-gray-950">
@@ -167,14 +176,21 @@ export default function CalendarPage() {
               <p className="text-sm text-gray-500 dark:text-gray-400">
                 No workout logged
               </p>
-              <button
-                type="button"
-                onClick={handleStartWorkout}
-                className="mt-3 inline-flex min-h-[44px] items-center gap-2 rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white active:bg-indigo-700"
-              >
-                <Plus className="h-4 w-4" />
-                Start a workout
-              </button>
+              {!isFutureDate && (
+                <button
+                  type="button"
+                  onClick={handleStartWorkout}
+                  className="mt-3 inline-flex min-h-[44px] items-center gap-2 rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white active:bg-indigo-700"
+                >
+                  <Plus className="h-4 w-4" />
+                  Start a workout
+                </button>
+              )}
+              {isFutureDate && (
+                <p className="mt-2 text-xs text-gray-400 dark:text-gray-500">
+                  Cannot create workouts for future dates
+                </p>
+              )}
             </div>
           )}
         </div>

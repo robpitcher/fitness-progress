@@ -59,17 +59,22 @@ export function useWorkoutByDate(
   );
 }
 
-/** Create a new workout for today. */
+/** Create a new workout for today or a specified date. */
 export function useCreateWorkout() {
-  return useSupabaseMutation<Workout, { user_id: string }>({
-    mutationFn: async ({ user_id }) => {
-      const today = todayDateString();
+  return useSupabaseMutation<Workout, { user_id: string; date?: string }>({
+    mutationFn: async ({ user_id, date }) => {
+      const workoutDate = date ?? todayDateString();
+      // For past dates, set started_at to midnight UTC of that date
+      // For today, use current timestamp
+      const startedAt = date
+        ? `${date}T00:00:00.000Z`
+        : new Date().toISOString();
       const { data, error } = await supabase
         .from("workouts")
         .insert({
           user_id,
-          date: today,
-          started_at: new Date().toISOString(),
+          date: workoutDate,
+          started_at: startedAt,
           completed_at: null,
           notes: null,
         })
