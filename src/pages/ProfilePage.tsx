@@ -1,8 +1,13 @@
 import { useEffect, useState } from 'react'
-import { Check, LogOut, Monitor, Moon, Sun } from 'lucide-react'
+import { Check, LogOut, Monitor, Moon, Sun, Plus, Pencil, Trash2, X } from 'lucide-react'
 import { useAuth } from '../hooks/useAuth'
 import { useTheme } from '../hooks/useTheme'
 import { useProfile } from '../hooks/useProfile'
+import { useCategories } from '../hooks/useCategories'
+import { useCreateCategory } from '../hooks/useCreateCategory'
+import { useUpdateCategory } from '../hooks/useUpdateCategory'
+import { useDeleteCategory } from '../hooks/useDeleteCategory'
+import type { Category } from '../types'
 
 type Theme = 'light' | 'dark' | 'system'
 
@@ -16,11 +21,20 @@ export default function ProfilePage() {
   const { user, signOut } = useAuth()
   const { theme, setTheme } = useTheme()
   const { profile, isLoading, updateProfile, isUpdating } = useProfile()
+  const { data: categories = [], isLoading: categoriesLoading } = useCategories(user?.id)
+  const createCategory = useCreateCategory()
+  const updateCategory = useUpdateCategory()
+  const deleteCategory = useDeleteCategory()
 
   const [displayName, setDisplayName] = useState<string | undefined>(undefined)
   const [signingOut, setSigningOut] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [saved, setSaved] = useState(false)
+
+  // Category management state
+  const [newCategoryName, setNewCategoryName] = useState('')
+  const [editingCategory, setEditingCategory] = useState<Category | null>(null)
+  const [editCategoryName, setEditCategoryName] = useState('')
 
   // Auto-dismiss saved indicator after 3 seconds
   useEffect(() => {
@@ -58,6 +72,68 @@ export default function ProfilePage() {
       setError(err instanceof Error ? err.message : 'Failed to sign out')
       setSigningOut(false)
     }
+  }
+
+  function handleCreateCategory() {
+    if (!user) return
+    const trimmedName = newCategoryName.trim()
+    if (!trimmedName) return
+
+    setError(null)
+    createCategory.mutate(
+      { name: trimmedName, user_id: user.id },
+      {
+        onSuccess: () => {
+          setNewCategoryName('')
+        },
+        onError: (err) => {
+          setError(err instanceof Error ? err.message : 'Failed to create category')
+        },
+      },
+    )
+  }
+
+  function handleUpdateCategory() {
+    if (!editingCategory) return
+    const trimmedName = editCategoryName.trim()
+    if (!trimmedName) return
+
+    setError(null)
+    updateCategory.mutate(
+      { id: editingCategory.id, name: trimmedName },
+      {
+        onSuccess: () => {
+          setEditingCategory(null)
+          setEditCategoryName('')
+        },
+        onError: (err) => {
+          setError(err instanceof Error ? err.message : 'Failed to update category')
+        },
+      },
+    )
+  }
+
+  function handleDeleteCategory(categoryId: string) {
+    if (!window.confirm('Delete this category? Exercises using it will have their category removed.')) {
+      return
+    }
+
+    setError(null)
+    deleteCategory.mutate(categoryId, {
+      onError: (err) => {
+        setError(err instanceof Error ? err.message : 'Failed to delete category')
+      },
+    })
+  }
+
+  function startEditCategory(category: Category) {
+    setEditingCategory(category)
+    setEditCategoryName(category.name)
+  }
+
+  function cancelEditCategory() {
+    setEditingCategory(null)
+    setEditCategoryName('')
   }
 
   return (
@@ -156,6 +232,108 @@ export default function ProfilePage() {
             )
           })}
         </div>
+      </section>
+
+      {/* Categories section */}
+      <section className="mt-8">
+        <h2 className="text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">
+          Exercise Categories
+        </h2>
+
+        {categoriesLoading ? (
+          <div className="mt-3 rounded-xl bg-gray-50 p-4 dark:bg-gray-900">
+            <div className="h-10 animate-pulse rounded-lg bg-gray-200 dark:bg-gray-800" />
+          </div>
+        ) : (
+          <>
+            {/* Category List */}
+            <div className="mt-3 space-y-2">
+              {categories.map((category) => (
+                <div
+                  key={category.id}
+                  className="flex items-center gap-2 rounded-xl bg-gray-50 p-3 dark:bg-gray-900"
+                >
+                  {editingCategory?.id === category.id ? (
+                    <>
+                      <input
+                        type="text"
+                        value={editCategoryName}
+                        onChange={(e) => setEditCategoryName(e.target.value)}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') handleUpdateCategory()
+                          if (e.key === 'Escape') cancelEditCategory()
+                        }}
+                        autoFocus
+                        className="min-h-[44px] min-w-0 flex-1 rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 placeholder:text-gray-400 focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100"
+                      />
+                      <button
+                        onClick={handleUpdateCategory}
+                        disabled={!editCategoryName.trim() || updateCategory.isPending}
+                        className="inline-flex min-h-[44px] min-w-[44px] items-center justify-center rounded-lg bg-indigo-600 text-white transition-colors hover:bg-indigo-700 disabled:opacity-50"
+                      >
+                        <Check className="h-4 w-4" />
+                      </button>
+                      <button
+                        onClick={cancelEditCategory}
+                        className="inline-flex min-h-[44px] min-w-[44px] items-center justify-center rounded-lg border border-gray-300 text-gray-600 transition-colors hover:bg-gray-100 dark:border-gray-700 dark:text-gray-400 dark:hover:bg-gray-800"
+                      >
+                        <X className="h-4 w-4" />
+                      </button>
+                    </>
+                  ) : (
+                    <>
+                      <span className="flex-1 text-sm text-gray-900 dark:text-gray-100">
+                        {category.name}
+                      </span>
+                      {category.user_id === null && (
+                        <span className="shrink-0 rounded-full bg-gray-200 px-2 py-0.5 text-xs font-medium text-gray-600 dark:bg-gray-700 dark:text-gray-400">
+                          Default
+                        </span>
+                      )}
+                      {category.user_id !== null && (
+                        <>
+                          <button
+                            onClick={() => startEditCategory(category)}
+                            className="inline-flex min-h-[44px] min-w-[44px] items-center justify-center rounded-lg text-gray-600 transition-colors hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-800"
+                          >
+                            <Pencil className="h-4 w-4" />
+                          </button>
+                          <button
+                            onClick={() => handleDeleteCategory(category.id)}
+                            disabled={deleteCategory.isPending}
+                            className="inline-flex min-h-[44px] min-w-[44px] items-center justify-center rounded-lg text-red-600 transition-colors hover:bg-red-50 disabled:opacity-50 dark:text-red-400 dark:hover:bg-red-900/20"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </button>
+                        </>
+                      )}
+                    </>
+                  )}
+                </div>
+              ))}
+
+              {/* Add New Category */}
+              <div className="flex items-center gap-2 rounded-xl bg-gray-50 p-3 dark:bg-gray-900">
+                <input
+                  type="text"
+                  placeholder="New category name..."
+                  value={newCategoryName}
+                  onChange={(e) => setNewCategoryName(e.target.value)}
+                  onKeyDown={(e) => e.key === 'Enter' && handleCreateCategory()}
+                  className="min-h-[44px] min-w-0 flex-1 rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 placeholder:text-gray-400 focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100 dark:placeholder:text-gray-500"
+                />
+                <button
+                  onClick={handleCreateCategory}
+                  disabled={!newCategoryName.trim() || createCategory.isPending}
+                  className="inline-flex min-h-[44px] items-center gap-1.5 rounded-lg bg-indigo-600 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-indigo-700 disabled:opacity-50"
+                >
+                  <Plus className="h-4 w-4" />
+                  Add
+                </button>
+              </div>
+            </div>
+          </>
+        )}
       </section>
 
       {/* Sign out */}

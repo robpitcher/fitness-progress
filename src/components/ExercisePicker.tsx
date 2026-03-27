@@ -1,6 +1,7 @@
 import { useState, useMemo, useEffect, useRef } from "react";
 import { Search, X, Plus, Dumbbell, User } from "lucide-react";
 import { useExercises } from "../hooks/useExercises";
+import { useCategories } from "../hooks/useCategories";
 import { useCreateExercise } from "../hooks/useCreateExercise";
 import type { Exercise } from "../types";
 
@@ -30,10 +31,11 @@ function ExercisePickerInner({
   const [search, setSearch] = useState("");
   const [view, setView] = useState<View>("list");
   const [newName, setNewName] = useState("");
-  const [newCategory, setNewCategory] = useState("");
+  const [newCategoryId, setNewCategoryId] = useState<string>("");
   const searchRef = useRef<HTMLInputElement>(null);
 
   const { data: exercises = [], isLoading } = useExercises(userId);
+  const { data: categories = [] } = useCategories(userId);
   const createExercise = useCreateExercise();
 
   // Focus search input on mount
@@ -63,7 +65,8 @@ function ExercisePickerInner({
     createExercise.mutate(
       {
         name,
-        category: newCategory.trim() || null,
+        category: null, // Keep for backward compatibility
+        category_id: newCategoryId || null,
         user_id: userId,
       },
       {
@@ -220,14 +223,20 @@ function ExercisePickerInner({
               >
                 Category <span className="text-gray-400">(optional)</span>
               </label>
-              <input
+              <select
                 id="exercise-category"
-                type="text"
-                placeholder="e.g. Legs, Chest, Back"
-                value={newCategory}
-                onChange={(e) => setNewCategory(e.target.value)}
-                className="w-full rounded-lg border border-gray-300 bg-gray-50 px-3 py-2.5 text-sm text-gray-900 placeholder-gray-500 focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100 dark:placeholder-gray-400"
-              />
+                value={newCategoryId}
+                onChange={(e) => setNewCategoryId(e.target.value)}
+                className="w-full rounded-lg border border-gray-300 bg-gray-50 px-3 py-2.5 text-sm text-gray-900 focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100"
+              >
+                <option value="">None</option>
+                {categories.map((category) => (
+                  <option key={category.id} value={category.id}>
+                    {category.name}
+                    {category.user_id === null ? ' (Default)' : ''}
+                  </option>
+                ))}
+              </select>
             </div>
 
             <div className="mt-auto flex gap-3 pt-4">
