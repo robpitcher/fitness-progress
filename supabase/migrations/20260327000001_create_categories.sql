@@ -67,6 +67,33 @@ begin
   end loop;
 end $$;
 
--- 5. Keep the old category column for now (we'll deprecate it later)
--- This maintains backward compatibility during transition
--- Future exercises will use category_id instead
+-- 5. Create a function to sync category name when category_id changes
+create or replace function sync_exercise_category()
+returns trigger as $$
+begin
+  -- If category_id is set, update category text from the categories table
+  if new.category_id is not null then
+    select name into new.category
+    from categories
+    where id = new.category_id;
+  else
+    -- If category_id is null, keep category as is (allows manual text)
+    new.category := new.category;
+  end if;
+  return new;
+end;
+$$ language plpgsql;
+
+-- 6. Create trigger to keep category text in sync with category_id
+create trigger sync_exercise_category_trigger
+  before insert or update of category_id
+  on exercises
+  for each row
+  execute function sync_exercise_category();
+
+-- 7. Update all existing exercises to sync their category text
+update exercises
+set category = categories.name
+from categories
+where exercises.category_id = categories.id;
+
