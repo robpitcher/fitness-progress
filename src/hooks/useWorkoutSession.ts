@@ -115,6 +115,20 @@ export function useAddWorkoutExercise() {
   });
 }
 
+/** Delete a workout exercise by id. */
+export function useDeleteWorkoutExercise() {
+  return useSupabaseMutation<void, string>({
+    mutationFn: async (id) => {
+      const { error } = await supabase
+        .from("workout_exercises")
+        .delete()
+        .eq("id", id);
+      if (error) throw error;
+    },
+    invalidateKeys: [queryKeys.workoutExercises.all],
+  });
+}
+
 /** Mark a workout as completed by setting completed_at. */
 export function useCompleteWorkout() {
   return useSupabaseMutation<Workout, { id: string }>({
