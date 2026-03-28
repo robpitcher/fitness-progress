@@ -1,4 +1,4 @@
-import { useCallback, useRef } from "react";
+import { useCallback, useRef, useState } from "react";
 import { Plus, Trash2, Loader2 } from "lucide-react";
 import {
   useSets,
@@ -7,6 +7,7 @@ import {
   useDeleteSet,
   usePreviousPerformance,
 } from "../hooks/useSets";
+import { useDeleteWorkoutExercise } from "../hooks/useWorkoutSession";
 import type { Set } from "../types";
 
 interface SetEntryProps {
@@ -14,6 +15,7 @@ interface SetEntryProps {
   exerciseId: string;
   workoutId: string;
   userId: string;
+  exerciseName: string;
 }
 
 /** Formats previous performance as "Last: 3×10 @ 135 lbs" */
@@ -131,6 +133,7 @@ export default function SetEntry({
   exerciseId,
   workoutId,
   userId,
+  exerciseName,
 }: SetEntryProps) {
   const { data: sets = [], isLoading } = useSets(workoutExerciseId);
   const { data: prevSets = [] } = usePreviousPerformance(
@@ -142,6 +145,9 @@ export default function SetEntry({
   const addSet = useAddSet();
   const updateSet = useUpdateSet();
   const deleteSet = useDeleteSet();
+  const deleteWorkoutExercise = useDeleteWorkoutExercise();
+
+  const [deletingSet, setDeletingSet] = useState<Set | null>(null);
 
   const handleAddSet = () => {
     addSet.mutate({
@@ -161,10 +167,33 @@ export default function SetEntry({
 
   const handleDelete = useCallback(
     (id: string) => {
-      deleteSet.mutate(id);
+      const set = sets.find((s) => s.id === id);
+      if (set) {
+        setDeletingSet(set);
+      }
     },
-    [deleteSet],
+    [sets],
   );
+
+  const confirmDelete = async () => {
+    if (!deletingSet) return;
+
+    // Check if this is the last set for this exercise
+    const isLastSet = sets.length === 1;
+
+    try {
+      await deleteSet.mutateAsync(deletingSet.id);
+
+      // If this was the last set, remove the workout exercise
+      if (isLastSet) {
+        deleteWorkoutExercise.mutate(workoutExerciseId);
+      }
+
+      setDeletingSet(null);
+    } catch {
+      // Leave the modal open so in-modal error UI is shown
+    }
+  };
 
   const prevLabel = formatPrevPerformance(prevSets);
 
@@ -216,6 +245,51 @@ export default function SetEntry({
         )}
         Add Set
       </button>
+
+      {/* Delete confirmation modal */}
+      {deletingSet && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4"
+          onClick={() => setDeletingSet(null)}
+        >
+          <div
+            className="w-full max-w-xs rounded-xl bg-white p-6 shadow-xl dark:bg-gray-900"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
+              Delete Set
+            </h3>
+            <p className="mt-2 text-sm text-gray-600 dark:text-gray-400">
+              Delete Set {deletingSet.set_number} of {exerciseName}? This cannot
+              be undone.
+            </p>
+
+            {deleteSet.isError && (
+              <div className="mt-3 rounded-lg bg-red-50 p-2 text-sm text-red-700 dark:bg-red-900/30 dark:text-red-400">
+                {deleteSet.error?.message ?? "Failed to delete"}
+              </div>
+            )}
+
+            <div className="mt-5 flex gap-3">
+              <button
+                type="button"
+                onClick={() => setDeletingSet(null)}
+                className="min-h-[44px] flex-1 rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-gray-800"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={confirmDelete}
+                disabled={deleteSet.isPending}
+                className="min-h-[44px] flex-1 rounded-lg bg-red-600 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-red-700 disabled:opacity-50 dark:bg-red-500 dark:hover:bg-red-600"
+              >
+                {deleteSet.isPending ? "Deleting…" : "Delete"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

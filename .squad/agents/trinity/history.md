@@ -87,3 +87,10 @@
   - CalendarPage line 135: `detail?.exercises` — prevents undefined access when event detail is null
 - **Pattern for team:** Always use optional chaining when accepting data from API responses or conditional queries that may be undefined. This prevents silent failures and blank pages in production.
 - **Testing impact:** Better test coverage includes mocking both success (data present) and edge cases (data missing), ensuring null-safety is actually tested.
+
+### 2026-03-28 — Delete Workout from Calendar
+- **useDeleteWorkout** hook added to `src/hooks/useWorkoutSession.ts` — follows same pattern as `useDeleteWorkoutExercise`: calls `supabase.from("workouts").delete().eq("id", id)`, invalidates `queryKeys.workouts.all`.
+- **CalendarPage** now has a red "Delete" button next to "Edit Workout" in the workout detail view.
+- **Confirmation modal** follows the exact pattern from `SetEntry.tsx`: fullscreen overlay with backdrop dismiss, white card (dark:gray-900), Cancel + Delete buttons, error display, pending state.
+- After successful deletion, `setSelectedDate(null)` clears the detail panel so the user sees the empty calendar state.
+- DB cascade deletes handle cleanup of workout_exercises and sets automatically.

@@ -253,6 +253,7 @@ export default function WorkoutPage() {
                     exerciseId={we.exercise_id}
                     workoutId={workout.id}
                     userId={userId}
+                    exerciseName={we.exercises.name}
                   />
                 )}
               </li>

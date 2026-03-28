@@ -128,6 +128,31 @@ export function useAddWorkoutExercise() {
   });
 }
 
+/** Delete a workout exercise by id. */
+export function useDeleteWorkoutExercise() {
+  return useSupabaseMutation<void, string>({
+    mutationFn: async (id) => {
+      const { error } = await supabase
+        .from("workout_exercises")
+        .delete()
+        .eq("id", id);
+      if (error) throw error;
+    },
+    invalidateKeys: [queryKeys.workoutExercises.all],
+  });
+}
+
+/** Delete a workout by ID (cascades to workout_exercises and sets via DB). */
+export function useDeleteWorkout() {
+  return useSupabaseMutation<void, string>({
+    mutationFn: async (id) => {
+      const { error } = await supabase.from("workouts").delete().eq("id", id);
+      if (error) throw error;
+    },
+    invalidateKeys: [queryKeys.workouts.all],
+  });
+}
+
 /** Mark a workout as completed by setting completed_at. */
 export function useCompleteWorkout() {
   return useSupabaseMutation<Workout, { id: string }>({
