@@ -20,4 +20,7 @@ export type {
   BodyWeight,
   BodyWeightInsert,
   BodyWeightUpdate,
+  ExerciseMuscle,
+  ExerciseMuscleInsert,
+  ExerciseMuscleUpdate,
 } from "./database";

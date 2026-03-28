@@ -68,6 +68,7 @@ function ExercisePickerInner({
         category: null, // Keep for backward compatibility
         category_id: newCategoryId || null,
         user_id: userId,
+        training_notes: null,
       },
       {
         onSuccess: (exercise) => {
