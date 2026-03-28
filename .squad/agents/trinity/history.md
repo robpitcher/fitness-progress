@@ -71,3 +71,19 @@
 - Touch targets ≥ 44px on all inputs and buttons. `inputMode="numeric"` / `"decimal"` for mobile keyboards.
 - **WorkoutPage** updated to render `<SetEntry>` beneath each exercise in the active workout view.
 - **PR:** #53
+
+### 2026-03-25 — Past Workout Creation PR Review Fixes (#78)
+- **todayDateString** function in `src/hooks/useWorkoutSession.ts` now exported for use in WorkoutPage.
+- **useCreateWorkout** startedAt logic — properly distinguishes past/today/future dates: past dates → midnight UTC, today → current timestamp, future → throw error.
+- **WorkoutPage** future-date guard — deep links to `/workout/:date` with future dates now hide "Start Workout" button and show "Cannot create workouts for future dates" message.
+- **Playwright tests** (`tests/workout.spec.ts`) — replaced hardcoded `'2026-03-15'` with dynamically computed past dates to prevent test staleness; improved mock to include all required workout fields; replaced flaky `waitForTimeout` with proper `waitForResponse` promise for POST completion.
+- Pattern: date validation guards at both API layer (useCreateWorkout) and UI layer (WorkoutPage) prevent future workout creation via direct URL manipulation.
+
+### 2026-03-28 — Null-Safety & Crash Prevention (Coordinator Pattern)
+- **Optional chaining pattern** for nested property access: `obj?.prop?.nested?.deepValue` prevents cascading crashes when intermediate values are undefined.
+- Applied to array access: `array?.[index]?.property` is safer than `array[index].property` when length is unknown.
+- **Real-world crashes fixed in #78:**
+  - WorkoutPage line 33: `pastWorkouts?.[0]?.exercises` — prevents undefined access when past workout data is missing
+  - CalendarPage line 135: `detail?.exercises` — prevents undefined access when event detail is null
+- **Pattern for team:** Always use optional chaining when accepting data from API responses or conditional queries that may be undefined. This prevents silent failures and blank pages in production.
+- **Testing impact:** Better test coverage includes mocking both success (data present) and edge cases (data missing), ensuring null-safety is actually tested.
