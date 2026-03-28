@@ -18,7 +18,7 @@ export interface WorkoutSummaryExercise {
   sets: Pick<Set, "set_number" | "reps" | "weight">[];
 }
 
-function todayDateString(): string {
+export function todayDateString(): string {
   const d = new Date();
   const yyyy = d.getFullYear();
   const mm = String(d.getMonth() + 1).padStart(2, "0");
@@ -59,17 +59,30 @@ export function useWorkoutByDate(
   );
 }
 
-/** Create a new workout for today. */
+/** Create a new workout for today or a specified date. */
 export function useCreateWorkout() {
-  return useSupabaseMutation<Workout, { user_id: string }>({
-    mutationFn: async ({ user_id }) => {
-      const today = todayDateString();
+  return useSupabaseMutation<Workout, { user_id: string; date?: string }>({
+    mutationFn: async ({ user_id, date }) => {
+      const workoutDate = date ?? todayDateString();
+      let startedAt: string;
+      if (!date) {
+        startedAt = new Date().toISOString();
+      } else {
+        const today = todayDateString();
+        if (date < today) {
+          startedAt = `${date}T00:00:00.000Z`;
+        } else if (date === today) {
+          startedAt = new Date().toISOString();
+        } else {
+          throw new Error("Workout date cannot be in the future");
+        }
+      }
       const { data, error } = await supabase
         .from("workouts")
         .insert({
           user_id,
-          date: today,
-          started_at: new Date().toISOString(),
+          date: workoutDate,
+          started_at: startedAt,
           completed_at: null,
           notes: null,
         })
@@ -112,6 +125,31 @@ export function useAddWorkoutExercise() {
       return data as WorkoutExercise;
     },
     invalidateKeys: [queryKeys.workoutExercises.all],
+  });
+}
+
+/** Delete a workout exercise by id. */
+export function useDeleteWorkoutExercise() {
+  return useSupabaseMutation<void, string>({
+    mutationFn: async (id) => {
+      const { error } = await supabase
+        .from("workout_exercises")
+        .delete()
+        .eq("id", id);
+      if (error) throw error;
+    },
+    invalidateKeys: [queryKeys.workoutExercises.all],
+  });
+}
+
+/** Delete a workout by ID (cascades to workout_exercises and sets via DB). */
+export function useDeleteWorkout() {
+  return useSupabaseMutation<void, string>({
+    mutationFn: async (id) => {
+      const { error } = await supabase.from("workouts").delete().eq("id", id);
+      if (error) throw error;
+    },
+    invalidateKeys: [queryKeys.workouts.all],
   });
 }
 

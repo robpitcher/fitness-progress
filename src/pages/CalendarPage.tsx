@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { format, isSameDay } from "date-fns";
-import { Dumbbell, Loader2, Pencil, Plus } from "lucide-react";
+import { Dumbbell, Loader2, Pencil, Plus, Trash2 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import Calendar from "../components/Calendar";
 import { useWorkoutDates } from "../hooks/useWorkouts";
@@ -8,6 +8,7 @@ import {
   useWorkoutDetail,
   type WorkoutDetailExercise,
 } from "../hooks/useWorkoutDetail";
+import { useDeleteWorkout } from "../hooks/useWorkoutSession";
 
 function ExerciseCard({ item }: { item: WorkoutDetailExercise }) {
   return (
@@ -78,13 +79,25 @@ export default function CalendarPage() {
   const { data: detail, isLoading: loadingDetail } =
     useWorkoutDetail(selectedDateStr);
 
+  const deleteWorkout = useDeleteWorkout();
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+
   const handleStartWorkout = () => {
-    navigate("/workout");
+    // If a past date is selected, navigate to workout creation for that date
+    if (selectedDateStr && !isSameDay(selectedDate!, new Date())) {
+      navigate(`/workout/${selectedDateStr}`);
+    } else {
+      // For today, navigate to the default workout page
+      navigate("/workout");
+    }
   };
 
   const handleEditWorkout = (date: string) => {
     navigate(`/workout/${date}`);
   };
+
+  // Check if selected date is in the future
+  const isFutureDate = selectedDate && selectedDate > new Date();
 
   return (
     <div className="min-h-svh bg-white px-4 pt-6 pb-4 dark:bg-gray-950">
@@ -117,7 +130,7 @@ export default function CalendarPage() {
               <Loader2 className="h-4 w-4 animate-spin" />
               <span>Loading…</span>
             </div>
-          ) : detail ? (
+          ) : detail?.exercises ? (
             <div className="mt-3 space-y-3">
               {/* Workout summary header */}
               <div className="flex items-center gap-2 text-sm text-indigo-600 dark:text-indigo-400">
@@ -152,29 +165,99 @@ export default function CalendarPage() {
                 </p>
               )}
 
-              {/* Edit Workout button */}
-              <button
-                type="button"
-                onClick={() => handleEditWorkout(detail.workout.date)}
-                className="mt-1 inline-flex min-h-[44px] items-center gap-2 rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white active:bg-indigo-700 dark:bg-indigo-500 dark:active:bg-indigo-600"
-              >
-                <Pencil className="h-4 w-4" />
-                Edit Workout
-              </button>
+              {/* Edit / Delete Workout buttons */}
+              <div className="mt-1 flex gap-2">
+                <button
+                  type="button"
+                  onClick={() => handleEditWorkout(detail.workout.date)}
+                  className="inline-flex min-h-[44px] items-center gap-2 rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white active:bg-indigo-700 dark:bg-indigo-500 dark:active:bg-indigo-600"
+                >
+                  <Pencil className="h-4 w-4" />
+                  Edit Workout
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setShowDeleteConfirm(true)}
+                  className="inline-flex min-h-[44px] items-center gap-2 rounded-lg bg-red-600 px-4 py-2 text-sm font-medium text-white active:bg-red-700 dark:bg-red-500 dark:active:bg-red-600"
+                >
+                  <Trash2 className="h-4 w-4" />
+                  Delete
+                </button>
+              </div>
+
+              {/* Delete confirmation modal */}
+              {showDeleteConfirm && (
+                <div
+                  className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4"
+                  onClick={() => setShowDeleteConfirm(false)}
+                >
+                  <div
+                    className="w-full max-w-xs rounded-xl bg-white p-6 shadow-xl dark:bg-gray-900"
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
+                      Delete Workout
+                    </h3>
+                    <p className="mt-2 text-sm text-gray-600 dark:text-gray-400">
+                      Delete workout on{" "}
+                      {format(selectedDate!, "MMMM d, yyyy")}? All exercises
+                      and sets will be permanently removed.
+                    </p>
+
+                    {deleteWorkout.isError && (
+                      <div className="mt-3 rounded-lg bg-red-50 p-2 text-sm text-red-700 dark:bg-red-900/30 dark:text-red-400">
+                        {deleteWorkout.error?.message ?? "Failed to delete"}
+                      </div>
+                    )}
+
+                    <div className="mt-5 flex gap-3">
+                      <button
+                        type="button"
+                        onClick={() => setShowDeleteConfirm(false)}
+                        className="min-h-[44px] flex-1 rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-gray-800"
+                      >
+                        Cancel
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          deleteWorkout.mutate(detail.workout.id, {
+                            onSuccess: () => {
+                              setShowDeleteConfirm(false);
+                              setSelectedDate(null);
+                            },
+                          });
+                        }}
+                        disabled={deleteWorkout.isPending}
+                        className="min-h-[44px] flex-1 rounded-lg bg-red-600 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-red-700 disabled:opacity-50 dark:bg-red-500 dark:hover:bg-red-600"
+                      >
+                        {deleteWorkout.isPending ? "Deleting…" : "Delete"}
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
           ) : (
             <div className="mt-3">
               <p className="text-sm text-gray-500 dark:text-gray-400">
                 No workout logged
               </p>
-              <button
-                type="button"
-                onClick={handleStartWorkout}
-                className="mt-3 inline-flex min-h-[44px] items-center gap-2 rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white active:bg-indigo-700"
-              >
-                <Plus className="h-4 w-4" />
-                Start a workout
-              </button>
+              {!isFutureDate && (
+                <button
+                  type="button"
+                  onClick={handleStartWorkout}
+                  className="mt-3 inline-flex min-h-[44px] items-center gap-2 rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white active:bg-indigo-700"
+                >
+                  <Plus className="h-4 w-4" />
+                  Start a workout
+                </button>
+              )}
+              {isFutureDate && (
+                <p className="mt-2 text-xs text-gray-400 dark:text-gray-500">
+                  Cannot create workouts for future dates
+                </p>
+              )}
             </div>
           )}
         </div>
