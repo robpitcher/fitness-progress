@@ -126,7 +126,7 @@ export default function CalendarPage() {
               <Loader2 className="h-4 w-4 animate-spin" />
               <span>Loading…</span>
             </div>
-          ) : detail ? (
+          ) : detail?.exercises ? (
             <div className="mt-3 space-y-3">
               {/* Workout summary header */}
               <div className="flex items-center gap-2 text-sm text-indigo-600 dark:text-indigo-400">

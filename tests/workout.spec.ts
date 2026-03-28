@@ -215,7 +215,12 @@ test.describe('Past Workout Creation', () => {
   test('creating a workout for a past date sets the correct date', async ({
     page,
   }) => {
-    const pastDate = '2026-03-15'
+    const pastDateObj = new Date()
+    pastDateObj.setDate(pastDateObj.getDate() - 2)
+    const year = pastDateObj.getFullYear()
+    const month = String(pastDateObj.getMonth() + 1).padStart(2, '0')
+    const day = String(pastDateObj.getDate()).padStart(2, '0')
+    const pastDate = `${year}-${month}-${day}`
     let capturedWorkout: { date: string; started_at: string } | null = null
 
     await page.addInitScript(
@@ -266,7 +271,9 @@ test.describe('Past Workout Creation', () => {
           status: 200,
           contentType: 'application/json',
           body: JSON.stringify(
-            isQueryingPastDate && capturedWorkout ? [capturedWorkout] : [],
+            isQueryingPastDate && capturedWorkout
+              ? [{ ...mockWorkout, ...capturedWorkout }]
+              : [],
           ),
         })
       }
@@ -292,10 +299,15 @@ test.describe('Past Workout Creation', () => {
     // Click Start Workout
     const startButton = page.getByRole('button', { name: 'Start Workout' })
     await expect(startButton).toBeVisible()
-    await startButton.click()
 
-    // Wait for the workout to be created
-    await page.waitForTimeout(500)
+    // Wait for the workout creation POST request to complete
+    const postPromise = page.waitForResponse(
+      (resp) =>
+        resp.url().includes('/rest/v1/workouts') &&
+        resp.request().method() === 'POST',
+    )
+    await startButton.click()
+    await postPromise
 
     // Verify the workout was created with the correct date
     expect(capturedWorkout).not.toBeNull()
@@ -306,13 +318,22 @@ test.describe('Past Workout Creation', () => {
   test('past workout page shows the selected date clearly', async ({
     page,
   }) => {
-    const pastDate = '2026-03-15'
+    const pastDateObj = new Date()
+    pastDateObj.setDate(pastDateObj.getDate() - 2)
+    const year = pastDateObj.getFullYear()
+    const month = String(pastDateObj.getMonth() + 1).padStart(2, '0')
+    const day = String(pastDateObj.getDate()).padStart(2, '0')
+    const pastDate = `${year}-${month}-${day}`
 
     await setupSupabaseMocks(page, { hasWorkout: false })
     await page.goto(`/workout/${pastDate}`)
 
     // Should show formatted date
-    await expect(page.getByText(/March 15/)).toBeVisible()
+    const formattedDate = pastDateObj.toLocaleDateString('en-US', {
+      month: 'long',
+      day: 'numeric',
+    })
+    await expect(page.getByText(new RegExp(formattedDate))).toBeVisible()
   })
 
   test('cannot create workout for future date from calendar', async ({
