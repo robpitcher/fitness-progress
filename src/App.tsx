@@ -6,7 +6,7 @@ import { useAuth } from './hooks/useAuth'
 import BottomTabBar from './components/BottomTabBar'
 import WorkoutPage from './pages/WorkoutPage'
 import CalendarPage from './pages/CalendarPage'
-import WeightPage from './pages/WeightPage'
+import ExerciseLibraryPage from './pages/ExerciseLibraryPage'
 import ChartsPage from './pages/ChartsPage'
 import ProfilePage from './pages/ProfilePage'
 import LoginPage from './pages/LoginPage'
@@ -67,7 +67,7 @@ export default function App() {
                 <Route path="/workout" element={<WorkoutPage />} />
                 <Route path="/workout/:date" element={<WorkoutPage />} />
                 <Route path="/calendar" element={<CalendarPage />} />
-                <Route path="/weight" element={<WeightPage />} />
+                <Route path="/library" element={<ExerciseLibraryPage />} />
                 <Route path="/charts" element={<ChartsPage />} />
                 <Route path="/profile" element={<ProfilePage />} />
               </Route>

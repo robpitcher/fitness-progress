@@ -1,6 +1,6 @@
-import { useMemo, useState } from "react";
+import { useMemo, useState, type FormEvent } from "react";
 import { format, isSameDay } from "date-fns";
-import { Dumbbell, Loader2, Pencil, Plus, Trash2 } from "lucide-react";
+import { Dumbbell, Loader2, Pencil, Plus, Scale, Trash2 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import Calendar from "../components/Calendar";
 import { useWorkoutDates } from "../hooks/useWorkouts";
@@ -9,6 +9,13 @@ import {
   type WorkoutDetailExercise,
 } from "../hooks/useWorkoutDetail";
 import { useDeleteWorkout } from "../hooks/useWorkoutSession";
+import { useAuth } from "../hooks/useAuth";
+import {
+  useBodyWeights,
+  useUpsertBodyWeight,
+  useDeleteBodyWeight,
+} from "../hooks/useBodyWeight";
+import type { BodyWeight } from "../types";
 
 function ExerciseCard({ item }: { item: WorkoutDetailExercise }) {
   return (
@@ -57,6 +64,7 @@ function ExerciseCard({ item }: { item: WorkoutDetailExercise }) {
 
 export default function CalendarPage() {
   const navigate = useNavigate();
+  const { user } = useAuth();
   const [currentMonth, setCurrentMonth] = useState(() => new Date());
   const [selectedDate, setSelectedDate] = useState<Date | null>(
     () => new Date(),
@@ -82,6 +90,20 @@ export default function CalendarPage() {
   const deleteWorkout = useDeleteWorkout();
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
+  // Weight logging state
+  const { data: bodyWeights = [] } = useBodyWeights(user?.id);
+  const upsertWeight = useUpsertBodyWeight();
+  const deleteWeightMutation = useDeleteBodyWeight();
+  const [weightInput, setWeightInput] = useState("");
+  const [showWeightInput, setShowWeightInput] = useState(false);
+  const [deletingWeight, setDeletingWeight] = useState<BodyWeight | null>(null);
+
+  // Find weight entry for selected date
+  const selectedDateWeight = useMemo(() => {
+    if (!selectedDateStr) return null;
+    return bodyWeights.find((w) => w.date === selectedDateStr);
+  }, [bodyWeights, selectedDateStr]);
+
   const handleStartWorkout = () => {
     // If a past date is selected, navigate to workout creation for that date
     if (selectedDateStr && !isSameDay(selectedDate!, new Date())) {
@@ -94,6 +116,29 @@ export default function CalendarPage() {
 
   const handleEditWorkout = (date: string) => {
     navigate(`/workout/${date}`);
+  };
+
+  const handleLogWeight = async (e: FormEvent) => {
+    e.preventDefault();
+    if (!user || !selectedDateStr) return;
+
+    const parsed = parseFloat(weightInput);
+    if (isNaN(parsed) || parsed <= 0) return;
+
+    await upsertWeight.mutateAsync({
+      user_id: user.id,
+      date: selectedDateStr,
+      weight: parsed,
+    });
+
+    setWeightInput("");
+    setShowWeightInput(false);
+  };
+
+  const handleDeleteWeight = async () => {
+    if (!deletingWeight) return;
+    await deleteWeightMutation.mutateAsync(deletingWeight.id);
+    setDeletingWeight(null);
   };
 
   // Check if selected date is in the future
@@ -260,6 +305,125 @@ export default function CalendarPage() {
               )}
             </div>
           )}
+
+          {/* Weight Logging Section */}
+          <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-800">
+            <div className="flex items-center gap-2 mb-3">
+              <Scale className="h-5 w-5 text-indigo-600 dark:text-indigo-400" />
+              <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100">
+                Body Weight
+              </h3>
+            </div>
+
+            {selectedDateWeight ? (
+              <div className="flex items-center justify-between">
+                <span className="text-sm font-medium text-gray-900 dark:text-gray-100">
+                  {selectedDateWeight.weight} lbs
+                </span>
+                <button
+                  type="button"
+                  onClick={() => setDeletingWeight(selectedDateWeight)}
+                  className="inline-flex min-h-[44px] items-center gap-2 rounded-lg bg-red-600 px-3 py-2 text-sm font-medium text-white transition-colors hover:bg-red-700 dark:bg-red-500 dark:hover:bg-red-600"
+                >
+                  <Trash2 className="h-4 w-4" />
+                  Delete Weight
+                </button>
+              </div>
+            ) : showWeightInput ? (
+              <form onSubmit={handleLogWeight} className="space-y-3">
+                <input
+                  type="number"
+                  inputMode="decimal"
+                  step="0.1"
+                  min="0"
+                  required
+                  autoFocus
+                  value={weightInput}
+                  onChange={(e) => setWeightInput(e.target.value)}
+                  placeholder="Weight (lbs)"
+                  className="min-h-[44px] w-full rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm text-gray-900 placeholder-gray-400 focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100 dark:placeholder-gray-500 dark:focus:border-indigo-400 dark:focus:ring-indigo-400"
+                />
+                {upsertWeight.isError && (
+                  <div role="alert" className="rounded-lg bg-red-50 p-2 text-sm text-red-700 dark:bg-red-900/30 dark:text-red-400">
+                    {upsertWeight.error?.message ?? "Failed to save"}
+                  </div>
+                )}
+                <div className="flex gap-2">
+                  <button
+                    type="submit"
+                    disabled={upsertWeight.isPending}
+                    className="min-h-[44px] flex-1 rounded-lg bg-indigo-600 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-indigo-700 disabled:opacity-50 dark:bg-indigo-500 dark:hover:bg-indigo-600"
+                  >
+                    {upsertWeight.isPending ? "Saving…" : "Save"}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShowWeightInput(false);
+                      setWeightInput("");
+                    }}
+                    className="min-h-[44px] rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-gray-800"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </form>
+            ) : (
+              <button
+                type="button"
+                onClick={() => setShowWeightInput(true)}
+                className="inline-flex min-h-[44px] items-center gap-2 rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-indigo-700 dark:bg-indigo-500 dark:hover:bg-indigo-600"
+              >
+                <Plus className="h-4 w-4" />
+                Log Weight
+              </button>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Delete weight confirmation modal */}
+      {deletingWeight && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4"
+          onClick={() => setDeletingWeight(null)}
+        >
+          <div
+            className="w-full max-w-xs rounded-xl bg-white p-6 shadow-xl dark:bg-gray-900"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
+              Delete Weight Entry
+            </h3>
+            <p className="mt-2 text-sm text-gray-600 dark:text-gray-400">
+              Delete the {deletingWeight.weight} lbs entry from{" "}
+              {format(new Date(deletingWeight.date + "T00:00:00"), "MMMM d, yyyy")}? This cannot be undone.
+            </p>
+
+            {deleteWeightMutation.isError && (
+              <div className="mt-3 rounded-lg bg-red-50 p-2 text-sm text-red-700 dark:bg-red-900/30 dark:text-red-400">
+                {deleteWeightMutation.error?.message ?? "Failed to delete"}
+              </div>
+            )}
+
+            <div className="mt-5 flex gap-3">
+              <button
+                type="button"
+                onClick={() => setDeletingWeight(null)}
+                className="min-h-[44px] flex-1 rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-gray-800"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={handleDeleteWeight}
+                disabled={deleteWeightMutation.isPending}
+                className="min-h-[44px] flex-1 rounded-lg bg-red-600 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-red-700 disabled:opacity-50 dark:bg-red-500 dark:hover:bg-red-600"
+              >
+                {deleteWeightMutation.isPending ? "Deleting…" : "Delete"}
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </div>

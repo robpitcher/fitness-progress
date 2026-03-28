@@ -19,6 +19,7 @@ export interface Exercise {
   category: string | null;
   category_id: string | null;
   user_id: string | null;
+  training_notes: string | null;
   created_at: string;
 }
 
@@ -57,6 +58,15 @@ export interface BodyWeight {
   created_at: string;
 }
 
+export interface ExerciseMuscle {
+  id: string;
+  exercise_id: string;
+  muscle_name: string;
+  muscle_role: 'primary' | 'secondary';
+  notes: string | null;
+  created_at: string;
+}
+
 // Insert types (omit server-generated fields)
 
 export type ProfileInsert = Omit<Profile, "created_at">;
@@ -72,6 +82,8 @@ export type WorkoutExerciseInsert = Omit<WorkoutExercise, "id" | "created_at">;
 export type SetInsert = Omit<Set, "id" | "created_at">;
 
 export type BodyWeightInsert = Omit<BodyWeight, "id" | "created_at">;
+
+export type ExerciseMuscleInsert = Omit<ExerciseMuscle, "id" | "created_at">;
 
 // Update types (all fields optional except id)
 
@@ -95,3 +107,6 @@ export type SetUpdate = Pick<Set, "id"> &
 
 export type BodyWeightUpdate = Pick<BodyWeight, "id"> &
   Partial<Omit<BodyWeight, "id" | "created_at">>;
+
+export type ExerciseMuscleUpdate = Pick<ExerciseMuscle, "id"> &
+  Partial<Omit<ExerciseMuscle, "id" | "created_at">>;

@@ -49,4 +49,10 @@ export const queryKeys = {
     exerciseList: (userId: string) =>
       ["exerciseProgress", "exerciseList", userId] as const,
   },
+  exerciseMuscles: {
+    all: ["exerciseMuscles"] as const,
+    list: (exerciseId: string) =>
+      ["exerciseMuscles", "list", exerciseId] as const,
+    detail: (id: string) => ["exerciseMuscles", "detail", id] as const,
+  },
 } as const;
