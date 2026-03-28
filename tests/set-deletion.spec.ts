@@ -339,11 +339,9 @@ test.describe('Set Deletion', () => {
     ).not.toBeVisible()
 
     // Verify set was deleted - should only have 2 delete buttons now
-    await page.waitForTimeout(500) // Wait for state update
-    const finalDeleteButtons = await page
-      .getByRole('button', { name: /Delete set \d+/ })
-      .count()
-    expect(finalDeleteButtons).toBe(2)
+    await expect(
+      page.getByRole('button', { name: /Delete set \d+/ }),
+    ).toHaveCount(2)
   })
 
   test('deleting the last set removes the exercise from workout', async ({
@@ -452,9 +450,6 @@ test.describe('Set Deletion', () => {
       .locator('.fixed.inset-0')
       .getByRole('button', { name: 'Delete' })
       .click()
-
-    // Wait for deletion to complete
-    await page.waitForTimeout(1000)
 
     // Exercise should be removed from workout
     await expect(page.getByText('Bench Press')).not.toBeVisible()

@@ -175,22 +175,24 @@ export default function SetEntry({
     [sets],
   );
 
-  const confirmDelete = () => {
+  const confirmDelete = async () => {
     if (!deletingSet) return;
 
     // Check if this is the last set for this exercise
     const isLastSet = sets.length === 1;
 
-    deleteSet.mutate(deletingSet.id, {
-      onSuccess: () => {
-        // If this was the last set, remove the workout exercise
-        if (isLastSet) {
-          deleteWorkoutExercise.mutate(workoutExerciseId);
-        }
-      },
-    });
+    try {
+      await deleteSet.mutateAsync(deletingSet.id);
 
-    setDeletingSet(null);
+      // If this was the last set, remove the workout exercise
+      if (isLastSet) {
+        deleteWorkoutExercise.mutate(workoutExerciseId);
+      }
+
+      setDeletingSet(null);
+    } catch {
+      // Leave the modal open so in-modal error UI is shown
+    }
   };
 
   const prevLabel = formatPrevPerformance(prevSets);
