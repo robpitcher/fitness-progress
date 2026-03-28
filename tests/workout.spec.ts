@@ -210,3 +210,157 @@ test.describe('Workout Page', () => {
     await expect(modal.getByText('Squat')).toBeVisible()
   })
 })
+
+test.describe('Past Workout Creation', () => {
+  test('creating a workout for a past date sets the correct date', async ({
+    page,
+  }) => {
+    const pastDateObj = new Date()
+    pastDateObj.setDate(pastDateObj.getDate() - 2)
+    const year = pastDateObj.getFullYear()
+    const month = String(pastDateObj.getMonth() + 1).padStart(2, '0')
+    const day = String(pastDateObj.getDate()).padStart(2, '0')
+    const pastDate = `${year}-${month}-${day}`
+    let capturedWorkout: { date: string; started_at: string } | null = null
+
+    await page.addInitScript(
+      ({ session }) => {
+        localStorage.setItem(
+          'sb-test-placeholder-auth-token',
+          JSON.stringify(session),
+        )
+      },
+      { session: mockSession },
+    )
+
+    await page.route(`${SUPABASE_URL}/auth/v1/**`, (route) => {
+      route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ user: mockSession.user }),
+      })
+    })
+
+    await page.route(`${SUPABASE_URL}/rest/v1/profiles*`, (route) => {
+      route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify(mockProfile),
+      })
+    })
+
+    await page.route(`${SUPABASE_URL}/rest/v1/workouts*`, async (route) => {
+      const method = route.request().method()
+      if (method === 'POST') {
+        const postData = route.request().postDataJSON()
+        capturedWorkout = postData
+        route.fulfill({
+          status: 201,
+          contentType: 'application/json',
+          body: JSON.stringify({
+            ...mockWorkout,
+            date: postData.date,
+            started_at: postData.started_at,
+          }),
+        })
+      } else {
+        // Check if workout exists for the date
+        const url = route.request().url()
+        const isQueryingPastDate = url.includes(`date=eq.${pastDate}`)
+        route.fulfill({
+          status: 200,
+          contentType: 'application/json',
+          body: JSON.stringify(
+            isQueryingPastDate && capturedWorkout
+              ? [{ ...mockWorkout, ...capturedWorkout }]
+              : [],
+          ),
+        })
+      }
+    })
+
+    await page.route(`${SUPABASE_URL}/rest/v1/workout_exercises*`, (route) => {
+      route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify([]),
+      })
+    })
+
+    // Navigate to the past date workout page
+    await page.goto(`/workout/${pastDate}`)
+
+    // Should show "No Workout Found" with Start Workout button
+    await expect(
+      page.getByRole('heading', { name: 'No Workout Found' }),
+    ).toBeVisible()
+    await expect(page.getByText(/No workout was logged on/)).toBeVisible()
+
+    // Click Start Workout
+    const startButton = page.getByRole('button', { name: 'Start Workout' })
+    await expect(startButton).toBeVisible()
+
+    // Wait for the workout creation POST request to complete
+    const postPromise = page.waitForResponse(
+      (resp) =>
+        resp.url().includes('/rest/v1/workouts') &&
+        resp.request().method() === 'POST',
+    )
+    await startButton.click()
+    await postPromise
+
+    // Verify the workout was created with the correct date
+    expect(capturedWorkout).not.toBeNull()
+    expect(capturedWorkout.date).toBe(pastDate)
+    expect(capturedWorkout.started_at).toBe(`${pastDate}T00:00:00.000Z`)
+  })
+
+  test('past workout page shows the selected date clearly', async ({
+    page,
+  }) => {
+    const pastDateObj = new Date()
+    pastDateObj.setDate(pastDateObj.getDate() - 2)
+    const year = pastDateObj.getFullYear()
+    const month = String(pastDateObj.getMonth() + 1).padStart(2, '0')
+    const day = String(pastDateObj.getDate()).padStart(2, '0')
+    const pastDate = `${year}-${month}-${day}`
+
+    await setupSupabaseMocks(page, { hasWorkout: false })
+    await page.goto(`/workout/${pastDate}`)
+
+    // Should show formatted date
+    const formattedDate = pastDateObj.toLocaleDateString('en-US', {
+      month: 'long',
+      day: 'numeric',
+    })
+    await expect(page.getByText(new RegExp(formattedDate))).toBeVisible()
+  })
+
+  test('cannot create workout for future date from calendar', async ({
+    page,
+  }) => {
+    await setupSupabaseMocks(page, { hasWorkout: false })
+    await page.goto('/calendar')
+
+    // Navigate to next month to find a future date
+    await page.getByRole('button', { name: 'Next month' }).click()
+    await page.waitForTimeout(200)
+
+    // Click on day 15 of next month
+    const dayButton = page
+      .locator('button')
+      .filter({ hasText: /^15$/ })
+      .first()
+    await dayButton.click()
+
+    // Should show "Cannot create workouts for future dates" message
+    await expect(
+      page.getByText(/Cannot create workouts for future dates/),
+    ).toBeVisible()
+
+    // Start workout button should not be visible
+    await expect(
+      page.getByRole('button', { name: 'Start a workout' }),
+    ).not.toBeVisible()
+  })
+})

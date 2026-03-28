@@ -9,6 +9,7 @@ import {
   useWorkoutExercises,
   useAddWorkoutExercise,
   useWorkoutByDate,
+  todayDateString,
 } from "../hooks/useWorkoutSession";
 import type { Exercise } from "../types";
 import ExercisePicker from "../components/ExercisePicker";
@@ -25,11 +26,11 @@ export default function WorkoutPage() {
 
   const { data: todayWorkouts = [], isLoading: loadingToday } =
     useTodayWorkout(isEditingPast ? undefined : userId);
-  const todayWorkout = todayWorkouts[0] ?? null;
+  const todayWorkout = todayWorkouts?.[0] ?? null;
 
   const { data: pastWorkouts = [], isLoading: loadingPast } =
     useWorkoutByDate(isEditingPast ? userId : undefined, dateParam);
-  const pastWorkout = pastWorkouts[0] ?? null;
+  const pastWorkout = pastWorkouts?.[0] ?? null;
 
   const workout = isEditingPast ? pastWorkout : todayWorkout;
   const loadingWorkout = isEditingPast ? loadingPast : loadingToday;
@@ -44,7 +45,8 @@ export default function WorkoutPage() {
 
   const handleStartWorkout = () => {
     if (!userId) return;
-    createWorkout.mutate({ user_id: userId });
+    // Pass the date parameter if editing a past date, otherwise create for today
+    createWorkout.mutate({ user_id: userId, date: dateParam });
   };
 
   const handleSelectExercise = (exercise: Exercise) => {
@@ -80,6 +82,7 @@ export default function WorkoutPage() {
 
   // Editing a past date with no workout found
   if (isEditingPast && !workout) {
+    const isFutureDate = dateParam && dateParam > todayDateString();
     return (
       <div className="flex min-h-svh flex-col items-center justify-center gap-4 bg-white px-4 dark:bg-gray-950">
         <Dumbbell className="h-16 w-16 text-gray-300 dark:text-gray-700" aria-hidden="true" />
@@ -89,13 +92,54 @@ export default function WorkoutPage() {
         <p className="text-center text-gray-500 dark:text-gray-400">
           No workout was logged on {workoutDateLabel}.
         </p>
-        <button
-          onClick={() => navigate("/calendar")}
-          className="flex min-h-[44px] items-center gap-2 rounded-xl bg-indigo-600 px-6 py-3 text-base font-semibold text-white shadow-sm transition-colors hover:bg-indigo-700 dark:bg-indigo-500 dark:hover:bg-indigo-600"
-        >
-          <ArrowLeft className="h-5 w-5" />
-          Back to Calendar
-        </button>
+        {isFutureDate ? (
+          <div className="flex gap-3">
+            <button
+              onClick={() => navigate("/calendar")}
+              className="flex min-h-[44px] items-center gap-2 rounded-xl border-2 border-gray-300 px-6 py-3 text-base font-semibold text-gray-700 shadow-sm transition-colors hover:bg-gray-50 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-gray-900"
+            >
+              <ArrowLeft className="h-5 w-5" />
+              Back to Calendar
+            </button>
+          </div>
+        ) : (
+          <div className="flex gap-3">
+            <button
+              onClick={() => navigate("/calendar")}
+              className="flex min-h-[44px] items-center gap-2 rounded-xl border-2 border-gray-300 px-6 py-3 text-base font-semibold text-gray-700 shadow-sm transition-colors hover:bg-gray-50 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-gray-900"
+            >
+              <ArrowLeft className="h-5 w-5" />
+              Back to Calendar
+            </button>
+            <button
+              onClick={handleStartWorkout}
+              disabled={createWorkout.isPending}
+              className="flex min-h-[44px] items-center gap-2 rounded-xl bg-indigo-600 px-6 py-3 text-base font-semibold text-white shadow-sm transition-colors hover:bg-indigo-700 disabled:opacity-50 dark:bg-indigo-500 dark:hover:bg-indigo-600"
+            >
+              {createWorkout.isPending ? (
+                <>
+                  <Loader2 className="h-5 w-5 animate-spin" />
+                  Starting…
+                </>
+              ) : (
+                <>
+                  <Plus className="h-5 w-5" />
+                  Start Workout
+                </>
+              )}
+            </button>
+          </div>
+        )}
+        {isFutureDate && (
+          <p className="text-sm text-gray-500 dark:text-gray-400">
+            Cannot create workouts for future dates
+          </p>
+        )}
+        {createWorkout.isError && (
+          <p role="alert" className="text-sm text-red-600 dark:text-red-400">
+            {createWorkout.error.message}
+          </p>
+        )}
       </div>
     );
   }
