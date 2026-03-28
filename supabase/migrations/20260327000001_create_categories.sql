@@ -11,6 +11,15 @@ create table categories (
   constraint categories_user_name_unique unique (user_id, name)
 );
 
+-- Partial unique indexes for case-insensitive uniqueness
+-- Prevents duplicate NULL user_id defaults (PostgreSQL treats NULLs as distinct in unique constraints)
+create unique index categories_default_name_unique
+  on categories (lower(name)) where user_id is null;
+
+-- Prevents case-variant duplicates per user (e.g. 'Chest' vs 'chest')
+create unique index categories_user_name_unique_ci
+  on categories (user_id, lower(name)) where user_id is not null;
+
 -- 2. Seed default categories (user_id IS NULL for system defaults)
 insert into categories (name, user_id) values
   ('Chest', null),

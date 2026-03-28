@@ -269,12 +269,14 @@ export default function ProfilePage() {
                       <button
                         onClick={handleUpdateCategory}
                         disabled={!editCategoryName.trim() || updateCategory.isPending}
+                        aria-label="Save category"
                         className="inline-flex min-h-[44px] min-w-[44px] items-center justify-center rounded-lg bg-indigo-600 text-white transition-colors hover:bg-indigo-700 disabled:opacity-50"
                       >
                         <Check className="h-4 w-4" />
                       </button>
                       <button
                         onClick={cancelEditCategory}
+                        aria-label="Cancel edit"
                         className="inline-flex min-h-[44px] min-w-[44px] items-center justify-center rounded-lg border border-gray-300 text-gray-600 transition-colors hover:bg-gray-100 dark:border-gray-700 dark:text-gray-400 dark:hover:bg-gray-800"
                       >
                         <X className="h-4 w-4" />
@@ -294,6 +296,7 @@ export default function ProfilePage() {
                         <>
                           <button
                             onClick={() => startEditCategory(category)}
+                            aria-label="Edit category"
                             className="inline-flex min-h-[44px] min-w-[44px] items-center justify-center rounded-lg text-gray-600 transition-colors hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-800"
                           >
                             <Pencil className="h-4 w-4" />
@@ -301,6 +304,7 @@ export default function ProfilePage() {
                           <button
                             onClick={() => handleDeleteCategory(category.id)}
                             disabled={deleteCategory.isPending}
+                            aria-label="Delete category"
                             className="inline-flex min-h-[44px] min-w-[44px] items-center justify-center rounded-lg text-red-600 transition-colors hover:bg-red-50 disabled:opacity-50 dark:text-red-400 dark:hover:bg-red-900/20"
                           >
                             <Trash2 className="h-4 w-4" />

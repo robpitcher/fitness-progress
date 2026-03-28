@@ -6,10 +6,11 @@ import type { Category, CategoryUpdate } from "../types";
 export function useUpdateCategory() {
   return useSupabaseMutation<Category, CategoryUpdate>({
     mutationFn: async (input) => {
+      const { id, ...fields } = input;
       const { data, error } = await supabase
         .from("categories")
-        .update(input)
-        .eq("id", input.id)
+        .update(fields)
+        .eq("id", id)
         .select()
         .single();
       if (error) throw error;

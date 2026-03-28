@@ -8,7 +8,7 @@ export function useDeleteCategory() {
       // First, set category_id to null for all exercises using this category
       const { error: updateError } = await supabase
         .from("exercises")
-        .update({ category_id: null })
+        .update({ category_id: null, category: null })
         .eq("category_id", categoryId);
 
       if (updateError) throw updateError;
