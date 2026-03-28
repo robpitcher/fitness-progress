@@ -94,3 +94,8 @@
 - **Confirmation modal** follows the exact pattern from `SetEntry.tsx`: fullscreen overlay with backdrop dismiss, white card (dark:gray-900), Cancel + Delete buttons, error display, pending state.
 - After successful deletion, `setSelectedDate(null)` clears the detail panel so the user sees the empty calendar state.
 - DB cascade deletes handle cleanup of workout_exercises and sets automatically.
+
+### 2026-03-28 — PR #77 Review Fixes (Accessibility & Payload Cleanup)
+- **Aria labels on icon-only buttons** — Added `aria-label` attributes to all icon-only category management buttons in `ProfilePage.tsx`: "Save category", "Cancel edit", "Edit category", "Delete category".
+- **Pattern:** Every icon-only `<button>` must have an `aria-label` for screen reader accessibility. This applies project-wide.
+- **useUpdateCategory payload fix** — Destructured `id` out of the mutation input before calling `.update()`, so the `id` field isn't sent as an update column. Pattern: always separate identifier fields from update payloads in Supabase mutations.

@@ -6,10 +6,18 @@ export interface Profile {
   created_at: string;
 }
 
+export interface Category {
+  id: string;
+  name: string;
+  user_id: string | null;
+  created_at: string;
+}
+
 export interface Exercise {
   id: string;
   name: string;
   category: string | null;
+  category_id: string | null;
   user_id: string | null;
   created_at: string;
 }
@@ -53,6 +61,8 @@ export interface BodyWeight {
 
 export type ProfileInsert = Omit<Profile, "created_at">;
 
+export type CategoryInsert = Omit<Category, "id" | "created_at">;
+
 export type ExerciseInsert = Omit<Exercise, "id" | "created_at">;
 
 export type WorkoutInsert = Omit<Workout, "id" | "created_at">;
@@ -67,6 +77,9 @@ export type BodyWeightInsert = Omit<BodyWeight, "id" | "created_at">;
 
 export type ProfileUpdate = Pick<Profile, "id"> &
   Partial<Omit<Profile, "id" | "created_at">>;
+
+export type CategoryUpdate = Pick<Category, "id"> &
+  Partial<Omit<Category, "id" | "created_at">>;
 
 export type ExerciseUpdate = Pick<Exercise, "id"> &
   Partial<Omit<Exercise, "id" | "created_at">>;
