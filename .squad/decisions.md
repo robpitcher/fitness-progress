@@ -96,6 +96,146 @@ Implemented a React context-based theme system supporting `light`, `dark`, and `
 
 **Impact:** All components can use `useTheme()` to read or change the theme. Tailwind `dark:` variants work automatically via the `.dark` class on `<html>`. Future theme toggle UI just needs to call `setTheme('light' | 'dark' | 'system')`.
 
+### Infrastructure Deployment Workflow
+
+**Date:** 2026-03-24
+**Author:** Niobe
+**PR:** #69
+**Issue:** #67
+
+Created a GitHub Actions workflow (`deploy-infra.yml`) for automated infrastructure deployment when Bicep files change on `main`.
+
+**Key Choices:**
+- **OIDC over client secrets** — Uses federated identity credentials on a user-assigned managed identity. No secret storage, no rotation needed.
+- **Subscription-scoped deployment** — `az deployment sub create` allows the Bicep template to create/manage the resource group itself.
+- **`production` GitHub environment** — Enables environment protection rules (required reviewers, wait timers) for future governance needs.
+- **Path-filtered trigger** — Only runs on `infra/**` changes to avoid unnecessary deployments on app code changes.
+- **SWA token extraction and masking** — Extracts deployment token from Bicep outputs and masks in logs for potential future automation.
+- **`if: always()` on logout** — Ensures Azure logout happens even if deployment fails.
+
+**Impact:** Three GitHub secrets required: `AZURE_CLIENT_ID`, `AZURE_TENANT_ID`, `AZURE_SUBSCRIPTION_ID`. OIDC federation must be configured on the managed identity (documented in `infra/README.md`). Depends on #66 for the Bicep templates.
+
+### SWA Deployment Workflow — Cleanup & Manual Trigger
+
+**Date:** 2026-03-24
+**Author:** Niobe
+**PR:** #71
+**Branch:** `squad/swa-workflow-cleanup`
+
+Removed path filters from the SWA deploy workflow push trigger and added `workflow_dispatch` for manual redeploys.
+
+**Key Choices:**
+- **Remove all path filters** — every push to `main` triggers a deploy. Path filters create maintenance burden and risk silently missing deploys.
+- **Add `workflow_dispatch:`** — enables manual redeploys from the GitHub Actions UI for debugging or forced redeployment without code changes.
+- **Keep `pull_request` unfiltered** — allows the `close_pull_request_job` to fire on PR close and clean up preview environments, even for non-app changes.
+
+**Rationale:** Missing a deploy is worse than an occasional no-op deploy (SWA deploys are fast and idempotent). Manual trigger is essential for debugging and secret rotation workflows.
+
+**Impact:** All pushes to `main` will trigger the SWA workflow (minor increase in CI usage). Team can now click "Run workflow" in Actions tab for on-demand deploys.
+
+### `.staticwebappignore` for SWA File Count Limit
+
+**Date:** 2026-03-24
+**Author:** Niobe
+**Status:** Active
+
+Azure SWA Free tier deployments were failing with "The number of static files was too large." Even with `skip_app_build: true` and `output_location: 'dist'`, the SWA deploy action walks the entire `app_location` directory (repo root), counting `node_modules/`, `.git/`, `.squad/`, `test-results/`, etc. toward the file limit.
+
+**Solution:**
+Added `.staticwebappignore` at the repo root. This file works like `.gitignore` but specifically for the SWA deploy action.
+
+**What's Excluded:**
+All non-deployed directories and files: `node_modules/`, `.squad/`, `.git/`, `.github/`, `supabase/`, `infra/`, `spec/`, `tests/`, `test-results/`, `playwright-report/`, `src/`, `public/`, config files, docs, and git metadata.
+
+**What's Uploaded:**
+Only `dist/` (Vite build output) and `staticwebapp.config.json` (SWA routing config).
+
+**Tradeoff:** If new top-level files are added that need to be deployed, they must not match any pattern in `.staticwebappignore`. This is unlikely since all app output goes to `dist/`.
+
+**Impact:** Workflow YAML needs no changes — the ignore file is the correct fix for this class of problem.
+
+### Past Workout Blank Page Bug — Date Logic Fix
+
+**Date:** 2026-03-27
+**Author:** Trinity
+**PR:** #78
+**Issue:** Blank page when clicking "add workout" on past dates in calendar
+
+The conditional query logic in `WorkoutPage.tsx` was inverted, causing both the today and past workout queries to be disabled simultaneously, leaving the UI in infinite loading state.
+
+**Root Cause:**
+```typescript
+// BEFORE (BROKEN):
+const { data: todayWorkouts = [], isLoading: loadingToday } =
+  useTodayWorkout(isEditingPast ? undefined : userId);
+const { data: pastWorkouts = [], isLoading: loadingPast } =
+  useWorkoutByDate(isEditingPast ? userId : undefined, dateParam);
+```
+
+**Solution:**
+```typescript
+// AFTER (FIXED):
+const { data: todayWorkouts = [], isLoading: loadingToday } =
+  useTodayWorkout(!isEditingPast ? userId : undefined);
+const { data: pastWorkouts = [], isLoading: loadingPast } =
+  useWorkoutByDate(isEditingPast ? userId : undefined, isEditingPast ? dateParam : undefined);
+```
+
+**Pattern for Team:** When using conditional TanStack Query hooks, match the condition across ALL parameters. Use `undefined` to disable queries. Double-check the hook's `enabled` option aligns with your conditional parameters.
+
+**Impact:** Past workout creation flow now works. No impact on today's workout flow.
+
+### Date Validation Defense-in-Depth Pattern
+
+**Date:** 2026-03-25
+**Context:** PR #78 review fixes for past workout creation feature
+
+When adding the ability to create workouts for past dates, deep-linking to future dates (e.g., `/workout/2099-01-01`) could bypass UI guards. This created a security/data integrity hole.
+
+**Solution — Two-Layer Validation:**
+
+1. **API Layer** (`useCreateWorkout` hook):
+   - Validates date is not in the future
+   - Throws: "Workout date cannot be in the future"
+   - Sets correct `started_at` timestamp (midnight UTC for past, current timestamp for today)
+
+2. **UI Layer** (`WorkoutPage.tsx`):
+   - Checks if `dateParam > todayDateString()` for deep-linked routes
+   - Hides "Start Workout" button for future dates
+   - Shows: "Cannot create workouts for future dates"
+
+**Pattern for Future Features:** Whenever accepting user-controlled dates or IDs via URL params, validate at both API (backend enforcement) and UI (better UX) layers. Never assume the UI will catch all invalid inputs.
+
+**Files Modified:**
+- `src/hooks/useWorkoutSession.ts` — Added future date validation + exported `todayDateString` utility
+- `src/pages/WorkoutPage.tsx` — Added UI-level future date guard for deep links
+- `tests/workout.spec.ts` — Made date assertions dynamic to prevent test staleness
+
+### Null-Safety Testing & Crash Prevention
+
+**Date:** 2026-03-28
+**Author:** Trinity & Coordinator
+**PR:** #78
+
+Fixed critical null-safety crashes causing blank pages when optional data was undefined.
+
+**Crashes Fixed:**
+1. `WorkoutPage` line 33: `pastWorkouts[0]?.exercises` — prevented crash when past workout data missing
+2. `CalendarPage` line 135: `detail?.exercises` — prevented crash when event detail undefined
+
+**Pattern for Team:**
+Use optional chaining at each level when accessing nested properties from potentially undefined objects:
+- `obj?.prop?.nested?.deepValue` prevents cascading crashes
+- Apply to array access: `array?.[index]?.property`
+- This pattern prevents production crashes from undefined data states.
+
+**Testing Improvements:**
+- Replaced hardcoded test dates with dynamically computed dates (prevents test staleness)
+- Replaced `waitForTimeout` with deterministic `waitForResponse` promises
+- Fixed mock data to include all required database fields (prevents masking production bugs)
+
+**Impact:** No more blank page crashes on missing data. Better test reliability and production stability.
+
 ## Governance
 
 - All meaningful changes require team consensus
